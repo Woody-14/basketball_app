@@ -1,0 +1,89 @@
+# ======================================
+# PYTHON (Backend)
+# ======================================
+
+# Virtual environments
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+!.env.example
+
+# Python build / packaging
+build/
+dist/
+*.egg-info/
+
+# Testing / coverage
+.coverage
+.pytest_cache/
+.cache/
+htmlcov/
+
+# ======================================
+# NODE / FRONTEND
+# ======================================
+
+# Node modules
+node_modules/
+
+# Build output
+admin-dashboard/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ======================================
+# DATABASE
+# ======================================
+
+*.sqlite3
+*.db
+
+# Alembic auto-generated (keep the alembic folder but ignore temp files)
+alembic/versions/__pycache__/
+
+# ======================================
+# VIDEO / MEDIA UPLOADS
+# ======================================
+
+# If you ever store uploads locally during development
+uploads/
+media/
+*.mp4
+*.mov
+*.avi
+
+# ======================================
+# IDE / EDITOR
+# ======================================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ======================================
+# OS FILES
+# ======================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ======================================
+# MISC
+# ======================================
+
+*.log
+*.tmp
+*.bak

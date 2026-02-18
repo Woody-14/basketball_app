@@ -1,0 +1,23 @@
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+
+# Database
+sqlalchemy==2.0.35
+asyncpg==0.29.0          # Async PostgreSQL driver
+alembic==1.13.2          # Database migrations
+
+# Authentication
+python-jose[cryptography]==3.3.0   # JWT tokens
+passlib[bcrypt]==1.7.4             # Password hashing
+python-multipart==0.0.9            # Form data parsing (login)
+
+# Validation & Settings
+pydantic==2.9.0
+pydantic-settings==2.5.0
+
+# File/Video uploads (S3-compatible)
+boto3==1.35.0
+
+# Utilities
+python-dateutil==2.9.0
