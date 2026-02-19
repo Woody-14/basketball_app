@@ -28,8 +28,16 @@ from app.schemas.drill import (
     TagCreate, TagResponse,
 )
 from app.services.auth import get_current_user, require_coach
+from app.services.storage import get_presigned_url
 
 router = APIRouter(prefix="/api/drills", tags=["Drills"])
+
+
+def resolve_video_url(drill: Drill) -> Drill:
+    """If drill has an R2 video_key, generate a fresh presigned URL."""
+    if drill.video_key:
+        drill.video_url = get_presigned_url(drill.video_key)
+    return drill
 
 
 @router.get("", response_model=list[DrillListResponse])
@@ -92,7 +100,7 @@ async def create_drill(
     db.add(drill)
     await db.flush()
     await db.refresh(drill, attribute_names=["tags"])
-    return drill
+    return resolve_video_url(drill)
 
 
 @router.get("/tags", response_model=list[TagResponse])
@@ -134,7 +142,7 @@ async def get_drill(
     drill = result.scalar_one_or_none()
     if not drill:
         raise HTTPException(status_code=404, detail="Drill not found")
-    return drill
+    return resolve_video_url(drill)
 
 
 @router.put("/{drill_id}", response_model=DrillResponse)
@@ -167,7 +175,7 @@ async def update_drill(
 
     await db.flush()
     await db.refresh(drill, attribute_names=["tags"])
-    return drill
+    return resolve_video_url(drill)
 
 
 @router.delete("/{drill_id}", status_code=status.HTTP_204_NO_CONTENT)

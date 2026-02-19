@@ -56,6 +56,12 @@ async function request(endpoint, options = {}) {
 
   const data = await response.json();
 
+  if (response.status === 401) {
+    clearToken();
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+
   if (!response.ok) {
     throw new Error(data.detail || 'Something went wrong');
   }

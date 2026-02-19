@@ -66,6 +66,8 @@ class DrillTag(Base):
 
 class Drill(Base):
     __tablename__ = "drills"
+    
+    video_key: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 

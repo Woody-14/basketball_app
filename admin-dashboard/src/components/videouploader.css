@@ -1,0 +1,131 @@
+/* ============================================================
+   VIDEO UPLOADER STYLES
+   Add this to the bottom of your existing index.css
+   ============================================================ */
+
+/* Dropzone */
+.video-uploader__dropzone {
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.video-uploader__dropzone:hover {
+  border-color: rgba(232, 113, 42, 0.4);
+  background: rgba(232, 113, 42, 0.03);
+}
+
+.video-uploader__dropzone--active {
+  border-color: var(--accent, #E8712A);
+  background: rgba(232, 113, 42, 0.08);
+  border-style: solid;
+}
+
+.video-uploader__dropzone--uploading {
+  cursor: default;
+  border-style: solid;
+  border-color: rgba(232, 113, 42, 0.3);
+}
+
+/* Prompt content */
+.video-uploader__icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.video-uploader__text {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 4px;
+}
+
+.video-uploader__text strong {
+  color: var(--accent, #E8712A);
+}
+
+.video-uploader__hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Progress */
+.video-uploader__progress {
+  padding: 10px 0;
+}
+
+.video-uploader__progress-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.video-uploader__progress-text {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12px;
+  font-family: 'Space Mono', monospace;
+}
+
+.video-uploader__progress-bar {
+  width: 100%;
+  max-width: 300px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.video-uploader__progress-fill {
+  height: 100%;
+  background: var(--accent, #E8712A);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Preview */
+.video-uploader__preview {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.video-uploader__preview-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+
+.btn-danger {
+  background: rgba(220, 53, 69, 0.15);
+  color: #ff6b7a;
+  border: 1px solid rgba(220, 53, 69, 0.25);
+}
+
+.btn-danger:hover {
+  background: rgba(220, 53, 69, 0.25);
+}
+
+/* Error */
+.video-uploader__error {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  border-radius: 8px;
+  color: #ff6b7a;
+  font-size: 0.85rem;
+}

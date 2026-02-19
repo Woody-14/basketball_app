@@ -8,6 +8,13 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
+    
+        
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = "basketball-app-videos"
+    
     # -- App --
     APP_NAME: str = "Basketball Training App"
     DEBUG: bool = False
@@ -27,6 +34,7 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
 
+    
     class Config:
         env_file = ".env"
 

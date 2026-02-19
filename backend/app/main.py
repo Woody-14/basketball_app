@@ -10,9 +10,11 @@ API docs available at:
 """
 
 from contextlib import asynccontextmanager
+from app.api.uploads import router as uploads_router
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine, Base
@@ -32,6 +34,8 @@ async def lifespan(app: FastAPI):
     # Startup: create tables if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Idempotent column migrations (create_all won't add columns to existing tables)
+        await conn.execute(text("ALTER TABLE drills ADD COLUMN IF NOT EXISTS video_key VARCHAR"))
     print(f"🏀 {settings.APP_NAME} is running!")
 
     yield  # App runs here
@@ -60,6 +64,8 @@ app.add_middleware(
 # Register all route modules
 for router in all_routers:
     app.include_router(router)
+app.include_router(uploads_router)
+
 
 
 # Health check

@@ -18,6 +18,7 @@ import {
 import { getDrills, createDrill, updateDrill, deleteDrill, getTags } from '../services/api'
 import { useToast } from '../App'
 import Modal from '../components/Modal'
+import VideoUploader from '../components/VideoUploader'
 
 
 // Maps category enum values to readable labels
@@ -146,7 +147,7 @@ export default function DrillsPage() {
         </div>
         <button className="btn btn-primary" onClick={handleNewDrill}>
           <Plus size={16} />
-          Add Drill
+          New Drill
         </button>
       </div>
 
@@ -267,6 +268,7 @@ function DrillFormModal({ drill, tags, onSave, onClose, onDelete }) {
    * This gives us full control over the form data.
    */
   const [form, setForm] = useState({
+    video_key: drill?.video_key || '',
     name: drill?.name || '',
     description: drill?.description || '',
     coaching_cues: drill?.coaching_cues || '',
@@ -296,6 +298,7 @@ function DrillFormModal({ drill, tags, onSave, onClose, onDelete }) {
       default_reps: form.default_reps || null,
       default_sets: form.default_sets || null,
       video_url: form.video_url || null,
+      video_key: form.video_key || null,
     }
 
     await onSave(data)
@@ -402,12 +405,20 @@ function DrillFormModal({ drill, tags, onSave, onClose, onDelete }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Demo Video URL</label>
-            <input
-              className="form-input"
-              value={form.video_url}
-              onChange={e => updateField('video_url', e.target.value)}
-              placeholder="https://... (we'll add proper video upload later)"
+            <label className="form-label">Demo Video</label>
+            <VideoUploader
+              currentVideoUrl={form.video_url}
+              currentVideoKey={form.video_key}
+              folder="drills"
+              onUploadComplete={(data) => {
+                if (data) {
+                  updateField('video_url', data.url)
+                  updateField('video_key', data.key)
+                } else {
+                  updateField('video_url', '')
+                  updateField('video_key', '')
+                }
+              }}
             />
           </div>
         </div>

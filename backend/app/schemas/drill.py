@@ -54,6 +54,7 @@ class DrillResponse(BaseModel):
     default_duration_seconds: Optional[int] = None
     default_reps: Optional[int] = None
     default_sets: Optional[int] = None
+    video_key: Optional[str] = None
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     tags: list[TagResponse] = []
