@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Basketball Training",
+    "slug": "basketball-training",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1A1A2E"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.basketballtraining.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1A1A2E"
+      },
+      "package": "com.basketballtraining.app"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Basketball Training to use your camera to record form check videos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Basketball Training to access your photos to upload form check videos."
+        }
+      ],
+      "expo-font",
+      "expo-asset"
+    ]
+  }
+}

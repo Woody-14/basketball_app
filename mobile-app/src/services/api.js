@@ -1,0 +1,202 @@
+/**
+ * API Service for the mobile app.
+ *
+ * IMPORTANT: Change API_BASE to your computer's local IP address
+ * when testing on a physical device (localhost won't work from a phone).
+ * Find your IP: open Command Prompt → ipconfig → look for IPv4 Address.
+ * Example: const API_BASE = 'http://192.168.1.42:8000/api';
+ */
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// For Expo Go on same machine, use localhost
+// For physical device, use your computer's local IP
+const API_BASE = 'http://localhost:8000/api';
+
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'user_data';
+
+
+// ---------- TOKEN MANAGEMENT ----------
+// AsyncStorage stores data as key-value strings (safe for tokens on mobile)
+
+export async function getToken() {
+  return await AsyncStorage.getItem(TOKEN_KEY);
+}
+
+export async function setToken(token) {
+  await AsyncStorage.setItem(TOKEN_KEY, token);
+}
+
+export async function clearToken() {
+  await AsyncStorage.removeItem(TOKEN_KEY);
+  await AsyncStorage.removeItem(USER_KEY);
+}
+
+export async function isLoggedIn() {
+  const token = await getToken();
+  return !!token;
+}
+
+// Cache user data locally so we don't need to fetch it every time
+export async function getCachedUser() {
+  const data = await AsyncStorage.getItem(USER_KEY);
+  return data ? JSON.parse(data) : null;
+}
+
+export async function setCachedUser(user) {
+  await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+
+// ---------- HTTP HELPERS ----------
+
+async function request(endpoint, options = {}) {
+  const token = await getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 204) return null;
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Something went wrong');
+  }
+
+  return data;
+}
+
+// For file uploads (video form checks)
+async function uploadRequest(endpoint, formData) {
+  const token = await getToken();
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      // Don't set Content-Type — fetch sets it automatically with boundary for FormData
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || 'Upload failed');
+  }
+  return data;
+}
+
+
+// ---------- AUTH ----------
+
+export async function login(email, password) {
+  const data = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  await setToken(data.access_token);
+  return data;
+}
+
+export async function logout() {
+  await clearToken();
+}
+
+
+// ---------- ASSIGNMENTS (Student's workouts) ----------
+
+export async function getMyAssignments(startDate, endDate) {
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  const query = params.toString();
+  return request(`/assignments/me${query ? `?${query}` : ''}`);
+}
+
+
+// ---------- WORKOUTS ----------
+
+export async function getWorkout(id) {
+  return request(`/workouts/${id}`);
+}
+
+
+// ---------- DRILLS ----------
+
+export async function getDrill(id) {
+  return request(`/drills/${id}`);
+}
+
+export async function getDrills(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.category) params.append('category', filters.category);
+  if (filters.difficulty) params.append('difficulty', filters.difficulty);
+  if (filters.search) params.append('search', filters.search);
+  const query = params.toString();
+  return request(`/drills${query ? `?${query}` : ''}`);
+}
+
+
+// ---------- PROFILE ----------
+
+export async function getMyProfile() {
+  // The student profile comes from the assignments endpoint's user data
+  // For now we'll decode from the JWT. A dedicated /me endpoint would be better.
+  // TODO: Add GET /api/me endpoint to backend
+  return request('/students/me').catch(() => null);
+}
+
+
+// ---------- WORKOUT COMPLETION ----------
+
+// TODO: These endpoints need to be added to the backend
+// Stubbed here so the mobile app is ready when they exist
+
+export async function completeWorkout(assignmentId, completionData) {
+  return request(`/assignments/${assignmentId}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(completionData),
+  });
+}
+
+export async function completeDrill(completionId, drillData) {
+  return request(`/completions/${completionId}/drills`, {
+    method: 'POST',
+    body: JSON.stringify(drillData),
+  });
+}
+
+export async function submitFormCheckVideo(drillCompletionId, videoUri) {
+  const formData = new FormData();
+  formData.append('video', {
+    uri: videoUri,
+    type: 'video/mp4',
+    name: 'form_check.mp4',
+  });
+  return uploadRequest(`/completions/drills/${drillCompletionId}/video`, formData);
+}
+
+
+// ---------- MESSAGES ----------
+
+// TODO: Add messaging endpoints to backend
+// Stubbed for the mobile app
+
+export async function getMessages() {
+  return request('/messages').catch(() => []);
+}
+
+export async function sendMessage(content, type = 'text') {
+  return request('/messages', {
+    method: 'POST',
+    body: JSON.stringify({ content, type }),
+  });
+}

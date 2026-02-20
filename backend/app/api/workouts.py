@@ -247,8 +247,18 @@ async def create_assignment(
     )
     db.add(assignment)
     await db.flush()
-    await db.refresh(assignment)
-    return assignment
+
+    result = await db.execute(
+        select(WorkoutAssignment)
+        .options(
+            selectinload(WorkoutAssignment.workout)
+            .selectinload(Workout.drills)
+            .selectinload(WorkoutDrill.drill)
+            .selectinload(Drill.tags)
+        )
+        .where(WorkoutAssignment.id == assignment.id)
+    )
+    return result.scalar_one()
 
 
 @router.post("/api/assignments/bulk", response_model=list[AssignmentResponse], status_code=status.HTTP_201_CREATED)
@@ -270,11 +280,20 @@ async def create_bulk_assignments(
             status=AssignmentStatus.SCHEDULED,
         )
         db.add(assignment)
-        assignments.append(assignment)
+        await db.flush()
 
-    await db.flush()
-    for a in assignments:
-        await db.refresh(a)
+        # Reload with workout relationship
+        result = await db.execute(
+            select(WorkoutAssignment)
+            .options(
+                selectinload(WorkoutAssignment.workout)
+                .selectinload(Workout.drills)
+                .selectinload(WorkoutDrill.drill)
+                .selectinload(Drill.tags)
+            )
+            .where(WorkoutAssignment.id == assignment.id)
+        )
+        assignments.append(result.scalar_one())
 
     return assignments
 
