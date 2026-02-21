@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // For Expo Go on same machine, use localhost
 // For physical device, use your computer's local IP
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://192.168.1.93:8000/api';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
