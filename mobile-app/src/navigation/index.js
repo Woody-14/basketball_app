@@ -63,9 +63,6 @@ function MainTabs() {
             case 'Schedule':
               iconName = focused ? 'calendar' : 'calendar-outline';
               break;
-            case 'Drills':
-              iconName = focused ? 'basketball' : 'basketball-outline';
-              break;
             case 'Progress':
               iconName = focused ? 'stats-chart' : 'stats-chart-outline';
               break;
@@ -79,7 +76,6 @@ function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} />
-      <Tab.Screen name="Drills" component={DrillLibraryScreen} />
       <Tab.Screen name="Progress" component={ProgressScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

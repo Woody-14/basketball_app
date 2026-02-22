@@ -1,67 +1,118 @@
 /**
- * MessagesScreen — Chat with the coach.
+ * MessagesScreen — Direct chat between the student and their coach.
  *
- * Simple messaging UI. For now this is a placeholder that will
- * connect to a real backend messaging system later. Shows the
- * structure and design so it's ready when the API is built.
+ * Polls for new messages every 5 seconds while the screen is open.
+ * Marks incoming messages as read on focus.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
+import { getMessages, sendMessage, markMessagesRead } from '../services/api';
 
 
-// Placeholder messages to show the design
-const PLACEHOLDER_MESSAGES = [
-  {
-    id: 1,
-    from: 'coach',
-    text: 'Welcome to the team! 🏀 I\'ve set up your first workout for this week. Let me know if you have any questions about the drills.',
-    time: '2 days ago',
-  },
-  {
-    id: 2,
-    from: 'student',
-    text: 'Thanks coach! I\'ll check it out today.',
-    time: '2 days ago',
-  },
-  {
-    id: 3,
-    from: 'coach',
-    text: 'Great! Focus on keeping your eyes up during the ball handling drills. That\'s the most important thing at this stage.',
-    time: '2 days ago',
-  },
-];
+// Format a UTC timestamp into a human-readable relative string
+function formatTime(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return date.toLocaleDateString('en-US', { weekday: 'short' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 
 export default function MessagesScreen() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState(PLACEHOLDER_MESSAGES);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
   const scrollRef = useRef(null);
 
-  function handleSend() {
-    if (!inputText.trim()) return;
+  useFocusEffect(
+    useCallback(() => {
+      loadMessages(true);
+      // Mark inbound messages as read in the background
+      markMessagesRead().catch(() => {});
 
-    const newMessage = {
-      id: Date.now(),
-      from: 'student',
-      text: inputText.trim(),
-      time: 'Just now',
-    };
+      // Poll for new messages every 5 s while screen is focused
+      const interval = setInterval(() => loadMessages(false), 5000);
+      return () => clearInterval(interval);
+    }, [])
+  );
 
-    setMessages(prev => [...prev, newMessage]);
+  async function loadMessages(showSpinner = true) {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const data = await getMessages();
+      setMessages(Array.isArray(data) ? data : []);
+      // Scroll to bottom after the first load
+      if (showSpinner) {
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 150);
+      }
+    } catch (err) {
+      if (showSpinner) setError('Could not load messages. Check your connection.');
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  }
+
+  async function handleSend() {
+    const text = inputText.trim();
+    if (!text || sending) return;
+
+    setSending(true);
     setInputText('');
 
-    // Auto-scroll to bottom
-    setTimeout(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    try {
+      const newMsg = await sendMessage(text);
+      setMessages(prev => [...prev, newMsg]);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch (err) {
+      // Restore the text so the user can retry
+      setInputText(text);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  // ---- Render ----
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.accent} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="wifi-outline" size={40} color={COLORS.textLight} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => loadMessages(true)}>
+          <Text style={styles.retryBtnText}>Try again</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
@@ -70,78 +121,81 @@ export default function MessagesScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-      {/* Info Banner */}
-      <View style={styles.infoBanner}>
-        <Ionicons name="information-circle-outline" size={16} color={COLORS.info} />
-        <Text style={styles.infoText}>
-          Messaging is coming soon! This is a preview of how it will look.
-        </Text>
-      </View>
-
-      {/* Messages */}
+      {/* Message list */}
       <ScrollView
         ref={scrollRef}
         style={styles.messageList}
         contentContainerStyle={styles.messageListContent}
         showsVerticalScrollIndicator={false}
       >
-        {messages.map(msg => {
-          const isMe = msg.from === 'student';
-          return (
-            <View
-              key={msg.id}
-              style={[styles.messageBubbleRow, isMe && styles.messageBubbleRowMe]}
-            >
-              {!isMe && (
-                <View style={styles.coachAvatar}>
-                  <Text style={styles.coachAvatarText}>🏀</Text>
+        {messages.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="chatbubbles-outline" size={52} color={COLORS.textLight} />
+            <Text style={styles.emptyTitle}>No messages yet</Text>
+            <Text style={styles.emptySubtext}>
+              Send a message to start the conversation with your coach.
+            </Text>
+          </View>
+        ) : (
+          messages.map(msg => {
+            const isMe = msg.sender_id === user?.id;
+            const senderName = msg.sender?.role === 'coach'
+              ? 'Coach'
+              : msg.sender?.first_name || 'You';
+
+            return (
+              <View
+                key={msg.id}
+                style={[styles.row, isMe && styles.rowMe]}
+              >
+                {!isMe && (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>🏀</Text>
+                  </View>
+                )}
+                <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleCoach]}>
+                  {!isMe && (
+                    <Text style={styles.senderName}>{senderName}</Text>
+                  )}
+                  <Text style={[styles.messageText, isMe && styles.messageTextMe]}>
+                    {msg.content}
+                  </Text>
+                  <Text style={[styles.timeText, isMe && styles.timeTextMe]}>
+                    {formatTime(msg.created_at)}
+                  </Text>
                 </View>
-              )}
-              <View style={[
-                styles.messageBubble,
-                isMe ? styles.bubbleMe : styles.bubbleCoach,
-              ]}>
-                {!isMe && <Text style={styles.senderName}>Coach</Text>}
-                <Text style={[
-                  styles.messageText,
-                  isMe && styles.messageTextMe,
-                ]}>
-                  {msg.text}
-                </Text>
-                <Text style={[
-                  styles.messageTime,
-                  isMe && styles.messageTimeMe,
-                ]}>
-                  {msg.time}
-                </Text>
               </View>
-            </View>
-          );
-        })}
+            );
+          })
+        )}
       </ScrollView>
 
-      {/* Input Bar */}
+      {/* Input bar */}
       <View style={styles.inputBar}>
         <TextInput
           style={styles.textInput}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Type a message..."
+          placeholder="Message your coach..."
           placeholderTextColor={COLORS.textLight}
           multiline
           maxLength={500}
           returnKeyType="default"
         />
         <TouchableOpacity
-          style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, (!inputText.trim() || sending) && styles.sendBtnDisabled]}
           onPress={handleSend}
-          disabled={!inputText.trim()}
+          disabled={!inputText.trim() || sending}
         >
-          <Ionicons
-            name="send"
-            size={20}
-            color={inputText.trim() ? '#FFF' : COLORS.textLight}
-          />
+          {sending ? (
+            <ActivityIndicator size="small" color={COLORS.textLight} />
+          ) : (
+            <Ionicons
+              name="send"
+              size={20}
+              color={inputText.trim() ? '#FFF' : COLORS.textLight}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -154,23 +208,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-
-  // Info banner
-  infoBanner: {
-    flexDirection: 'row',
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: SPACING.sm,
+    padding: SPACING.xl,
+    backgroundColor: COLORS.bg,
+  },
+  errorText: {
+    fontSize: FONTS.sizes.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: SPACING.md,
+  },
+  retryBtn: {
+    marginTop: SPACING.lg,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
-    backgroundColor: '#EBF5FB',
-    borderBottomWidth: 1,
-    borderBottomColor: '#D4E6F1',
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.md,
   },
-  infoText: {
-    flex: 1,
-    fontSize: FONTS.sizes.xs,
-    color: COLORS.info,
-    fontWeight: '500',
+  retryBtnText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: FONTS.sizes.body,
   },
 
   // Message list
@@ -181,15 +242,40 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.md,
   },
-  messageBubbleRow: {
+
+  // Empty state
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 80,
+  },
+  emptyTitle: {
+    fontSize: FONTS.sizes.md,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginTop: SPACING.md,
+  },
+  emptySubtext: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+    lineHeight: 20,
+    maxWidth: 260,
+  },
+
+  // Message rows
+  row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: SPACING.sm,
   },
-  messageBubbleRowMe: {
+  rowMe: {
     justifyContent: 'flex-end',
   },
-  coachAvatar: {
+
+  // Avatar (coach side only)
+  avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -197,10 +283,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  coachAvatarText: {
+  avatarText: {
     fontSize: 16,
   },
-  messageBubble: {
+
+  // Bubbles
+  bubble: {
     maxWidth: '75%',
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
@@ -228,12 +316,12 @@ const styles = StyleSheet.create({
   messageTextMe: {
     color: '#FFF',
   },
-  messageTime: {
+  timeText: {
     fontSize: FONTS.sizes.xs,
     color: COLORS.textLight,
     marginTop: 6,
   },
-  messageTimeMe: {
+  timeTextMe: {
     color: 'rgba(255,255,255,0.6)',
   },
 

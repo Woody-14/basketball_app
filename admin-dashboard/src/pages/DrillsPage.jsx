@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react'
 import { 
   Plus, Search, Dumbbell, Play, Edit2, Trash2 
 } from 'lucide-react'
-import { getDrills, createDrill, updateDrill, deleteDrill, getTags } from '../services/api'
+import { getDrills, getDrill, createDrill, updateDrill, deleteDrill, getTags } from '../services/api'
 import { useToast } from '../App'
 import Modal from '../components/Modal'
 import VideoUploader from '../components/VideoUploader'
@@ -103,8 +103,13 @@ export default function DrillsPage() {
     setShowModal(true)
   }
 
-  function handleEditDrill(drill) {
-    setEditingDrill(drill)
+  async function handleEditDrill(drill) {
+    try {
+      const fullDrill = await getDrill(drill.id)
+      setEditingDrill(fullDrill)
+    } catch (err) {
+      setEditingDrill(drill)
+    }
     setShowModal(true)
   }
 

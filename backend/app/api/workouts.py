@@ -334,6 +334,55 @@ async def get_my_assignments(
     return result.scalars().unique().all()
 
 
+@router.patch("/api/assignments/{assignment_id}/complete", response_model=AssignmentResponse)
+async def complete_assignment(
+    assignment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mark a workout assignment as completed by the student."""
+    result = await db.execute(
+        select(WorkoutAssignment)
+        .options(
+            selectinload(WorkoutAssignment.workout)
+            .selectinload(Workout.drills)
+            .selectinload(WorkoutDrill.drill)
+            .selectinload(Drill.tags)
+        )
+        .where(WorkoutAssignment.id == assignment_id)
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    if assignment.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your assignment")
+
+    assignment.status = AssignmentStatus.COMPLETED
+
+    # Update the student's streak
+    student_result = await db.execute(select(User).where(User.id == current_user.id))
+    student = student_result.scalar_one_or_none()
+    if student:
+        student.current_streak = (student.current_streak or 0) + 1
+        if student.current_streak > (student.longest_streak or 0):
+            student.longest_streak = student.current_streak
+
+    await db.flush()
+
+    result = await db.execute(
+        select(WorkoutAssignment)
+        .options(
+            selectinload(WorkoutAssignment.workout)
+            .selectinload(Workout.drills)
+            .selectinload(WorkoutDrill.drill)
+            .selectinload(Drill.tags)
+        )
+        .where(WorkoutAssignment.id == assignment_id)
+    )
+    return result.scalar_one()
+
+
 @router.get("/api/assignments/student/{student_id}", response_model=list[AssignmentResponse])
 async def get_student_assignments(
     student_id: int,

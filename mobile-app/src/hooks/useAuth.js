@@ -30,9 +30,23 @@ export function AuthProvider({ children }) {
     try {
       const loggedIn = await api.isLoggedIn();
       if (loggedIn) {
+        // Try to refresh the full profile from the server
+        try {
+          const profile = await api.getMyProfile();
+          if (profile) {
+            setUser(profile);
+            await api.setCachedUser(profile);
+            setIsAuthenticated(true);
+            return;
+          }
+        } catch (e) {
+          // Server unreachable — fall back to cached data
+        }
         const cached = await api.getCachedUser();
-        setUser(cached);
-        setIsAuthenticated(true);
+        if (cached) {
+          setUser(cached);
+          setIsAuthenticated(true);
+        }
       }
     } catch (err) {
       console.error('Auth check failed:', err);
@@ -42,16 +56,16 @@ export function AuthProvider({ children }) {
   }
 
   async function signIn(email, password) {
-    const data = await api.login(email, password);
-    // Decode basic info from JWT payload (middle segment)
+    await api.login(email, password);
+    // Fetch the full profile from the /me endpoint
     try {
-      const payload = JSON.parse(atob(data.access_token.split('.')[1]));
-      const userData = { id: parseInt(payload.sub), role: payload.role, email };
-      setUser(userData);
-      await api.setCachedUser(userData);
+      const profile = await api.getMyProfile();
+      setUser(profile);
+      await api.setCachedUser(profile);
     } catch (e) {
-      // If JWT decode fails, just set basic info
+      // Fallback: store minimal info if profile fetch fails
       setUser({ email });
+      await api.setCachedUser({ email });
     }
     setIsAuthenticated(true);
   }

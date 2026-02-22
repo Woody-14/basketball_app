@@ -148,10 +148,7 @@ export async function getDrills(filters = {}) {
 // ---------- PROFILE ----------
 
 export async function getMyProfile() {
-  // The student profile comes from the assignments endpoint's user data
-  // For now we'll decode from the JWT. A dedicated /me endpoint would be better.
-  // TODO: Add GET /api/me endpoint to backend
-  return request('/students/me').catch(() => null);
+  return request('/auth/me');
 }
 
 
@@ -162,7 +159,7 @@ export async function getMyProfile() {
 
 export async function completeWorkout(assignmentId, completionData) {
   return request(`/assignments/${assignmentId}/complete`, {
-    method: 'POST',
+    method: 'PATCH',
     body: JSON.stringify(completionData),
   });
 }
@@ -187,16 +184,17 @@ export async function submitFormCheckVideo(drillCompletionId, videoUri) {
 
 // ---------- MESSAGES ----------
 
-// TODO: Add messaging endpoints to backend
-// Stubbed for the mobile app
-
 export async function getMessages() {
-  return request('/messages').catch(() => []);
+  return request('/messages');
 }
 
-export async function sendMessage(content, type = 'text') {
+export async function sendMessage(content) {
   return request('/messages', {
     method: 'POST',
-    body: JSON.stringify({ content, type }),
+    body: JSON.stringify({ content }),
   });
+}
+
+export async function markMessagesRead() {
+  return request('/messages/read', { method: 'PATCH' });
 }

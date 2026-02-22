@@ -56,7 +56,7 @@ export default function ProgressScreen() {
   }
 
   // Calculate stats
-  const completedAssignments = assignments.filter(a => a.completed_at);
+  const completedAssignments = assignments.filter(a => a.status === 'completed');
   const totalCompleted = completedAssignments.length;
   const totalAssigned = assignments.length;
   const complianceRate = totalAssigned > 0
@@ -66,10 +66,10 @@ export default function ProgressScreen() {
   // Build heatmap data for last 28 days
   const last28 = getLastNDays(28);
   const completedDates = new Set(
-    completedAssignments.map(a => a.scheduled_date)
+    completedAssignments.map(a => a.assigned_date)
   );
   const assignedDates = new Set(
-    assignments.map(a => a.scheduled_date)
+    assignments.map(a => a.assigned_date)
   );
 
   // Calculate current streak
@@ -181,7 +181,7 @@ export default function ProgressScreen() {
             </View>
           ) : (
             completedAssignments
-              .sort((a, b) => b.scheduled_date.localeCompare(a.scheduled_date))
+              .sort((a, b) => String(b.assigned_date).localeCompare(String(a.assigned_date)))
               .slice(0, 10)
               .map(assignment => (
                 <View key={assignment.id} style={styles.historyItem}>
@@ -193,7 +193,7 @@ export default function ProgressScreen() {
                       {assignment.workout?.name || 'Workout'}
                     </Text>
                     <Text style={styles.historyDate}>
-                      {new Date(assignment.scheduled_date + 'T12:00:00').toLocaleDateString('en-US', {
+                      {new Date(assignment.assigned_date + 'T12:00:00').toLocaleDateString('en-US', {
                         weekday: 'short', month: 'short', day: 'numeric'
                       })}
                     </Text>

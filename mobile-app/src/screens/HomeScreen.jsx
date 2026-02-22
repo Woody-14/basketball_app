@@ -78,7 +78,7 @@ export default function HomeScreen({ navigation }) {
   // Find today's assignment
   const today = todayStr();
   const todayAssignment = assignments.find(a => a.assigned_date === today);
-  const completedThisWeek = assignments.filter(a => a.completed_at).length;
+  const completedThisWeek = assignments.filter(a => a.status === 'completed').length;
   const totalThisWeek = assignments.length;
 
   // Get greeting based on time of day
@@ -93,7 +93,7 @@ export default function HomeScreen({ navigation }) {
   const weekDates = getWeekDates();
   const assignmentDates = new Set(assignments.map(a => a.assigned_date));
   const completedDates = new Set(
-    assignments.filter(a => a.completed_at).map(a => a.assigned_date)
+    assignments.filter(a => a.status === 'completed').map(a => a.assigned_date)
   );
 
   return (
@@ -189,13 +189,13 @@ export default function HomeScreen({ navigation }) {
                   {todayAssignment.workout?.name || 'Assigned Workout'}
                 </Text>
                 <Text style={styles.workoutCardMeta}>
-                  {todayAssignment.workout?.drill_count || '?'} drills
+                  {todayAssignment.workout?.drills?.length ?? '?'} drills
                   {todayAssignment.workout?.estimated_duration_minutes
                     ? ` · ~${todayAssignment.workout.estimated_duration_minutes} min`
                     : ''}
                 </Text>
               </View>
-              {todayAssignment.completed_at ? (
+              {todayAssignment.status === 'completed' ? (
                 <View style={styles.completedBadge}>
                   <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
                 </View>
@@ -204,7 +204,7 @@ export default function HomeScreen({ navigation }) {
               )}
             </View>
 
-            {!todayAssignment.completed_at && (
+            {todayAssignment.status !== 'completed' && (
               <TouchableOpacity
                 style={styles.startButton}
                 onPress={() => navigation.navigate('ActiveWorkout', { assignment: todayAssignment })}
@@ -252,7 +252,7 @@ export default function HomeScreen({ navigation }) {
                       {assignment.workout?.name || 'Workout'}
                     </Text>
                     <Text style={styles.upcomingMeta}>
-                      {assignment.workout?.drill_count || '?'} drills
+                      {assignment.workout?.drills?.length ?? '?'} drills
                       {assignment.workout?.estimated_duration_minutes
                         ? ` · ~${assignment.workout.estimated_duration_minutes} min`
                         : ''}

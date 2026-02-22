@@ -52,7 +52,7 @@ export default function WorkoutDetailScreen({ route, navigation }) {
     );
   }
 
-  const isCompleted = !!assignment.completed_at;
+  const isCompleted = assignment.status === 'completed';
   const drills = workout.drills || [];
 
   return (
@@ -97,7 +97,7 @@ export default function WorkoutDetailScreen({ route, navigation }) {
             <Ionicons name="calendar-outline" size={14} color={COLORS.accent} />
             <Text style={styles.dateTagText}>
               Scheduled for{' '}
-              {new Date(assignment.scheduled_date + 'T12:00:00').toLocaleDateString('en-US', {
+              {new Date(assignment.assigned_date + 'T12:00:00').toLocaleDateString('en-US', {
                 weekday: 'long', month: 'short', day: 'numeric'
               })}
             </Text>

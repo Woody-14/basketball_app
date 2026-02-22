@@ -7,10 +7,12 @@ from app.models.user import User
 from app.models.drill import Drill, DrillTag
 from app.models.workout import Workout, WorkoutDrill, WorkoutAssignment
 from app.models.progress import WorkoutCompletion, DrillCompletion, Badge, UserBadge, SkillAssessment
+from app.models.message import Message
 
 __all__ = [
     "User",
     "Drill", "DrillTag",
     "Workout", "WorkoutDrill", "WorkoutAssignment",
     "WorkoutCompletion", "DrillCompletion", "Badge", "UserBadge", "SkillAssessment",
+    "Message",
 ]

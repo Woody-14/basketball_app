@@ -18,6 +18,7 @@ import DashboardPage from './pages/DashboardPage'
 import DrillsPage from './pages/DrillsPage'
 import WorkoutsPage from './pages/WorkoutsPage'
 import StudentsPage from './pages/StudentsPage'
+import MessagesPage from './pages/MessagesPage'
 
 // Components
 import Sidebar from './components/Sidebar'

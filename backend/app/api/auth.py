@@ -14,7 +14,7 @@ from app.models.user import User, UserRole
 from app.schemas.user import LoginRequest, TokenResponse, UserCreate, UserProfile
 from app.services.auth import (
     hash_password, verify_password, create_access_token,
-    require_coach,
+    get_current_user, require_coach,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -83,3 +83,9 @@ async def create_student(
     await db.refresh(student)
 
     return student
+
+
+@router.get("/me", response_model=UserProfile)
+async def get_me(current_user: User = Depends(get_current_user)):
+    """Get the currently logged-in user's full profile."""
+    return current_user

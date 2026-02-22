@@ -211,3 +211,21 @@ export async function updateStudent(id, data) {
     body: JSON.stringify(data),
   });
 }
+
+
+// ---------- MESSAGES ----------
+
+export async function getConversation(studentId) {
+  return request(`/messages?student_id=${studentId}`);
+}
+
+export async function sendMessageToStudent(studentId, content) {
+  return request('/messages', {
+    method: 'POST',
+    body: JSON.stringify({ content, recipient_id: studentId }),
+  });
+}
+
+export async function markConversationRead(studentId) {
+  return request(`/messages/read?student_id=${studentId}`, { method: 'PATCH' });
+}
