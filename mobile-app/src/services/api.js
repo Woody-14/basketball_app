@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // For Expo Go on same machine, use localhost
 // For physical device, use your computer's local IP
-const API_BASE = 'http://192.168.1.93:8000/api';
+const API_BASE = 'http://192.168.1.173:8000/api';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
@@ -68,6 +68,11 @@ async function request(endpoint, options = {}) {
 
   const data = await response.json();
 
+  if (response.status === 401) {
+    await clearToken();
+    throw new Error('Invalid or expired token. Please log in again.');
+  }
+
   if (!response.ok) {
     throw new Error(data.detail || 'Something went wrong');
   }
@@ -88,6 +93,12 @@ async function uploadRequest(endpoint, formData) {
   });
 
   const data = await response.json();
+
+  if (response.status === 401) {
+    await clearToken();
+    throw new Error('Invalid or expired token. Please log in again.');
+  }
+
   if (!response.ok) {
     throw new Error(data.detail || 'Upload failed');
   }

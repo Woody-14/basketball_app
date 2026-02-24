@@ -139,7 +139,6 @@ export async function createTag(name) {
   });
 }
 
-
 // ---------- WORKOUTS ----------
 
 export async function getWorkouts(templatesOnly = false) {

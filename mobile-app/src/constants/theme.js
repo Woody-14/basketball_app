@@ -1,45 +1,45 @@
 /**
  * Design constants for the mobile app.
- * Matches the admin dashboard's design system but adapted for mobile.
+ * Matches the admin dashboard's premium design system but adapted for mobile.
  */
 
 export const COLORS = {
   // Primary palette
-  bg: '#F8F7F4',
+  bg: '#EAECEF',
   surface: '#FFFFFF',
-  dark: '#1A1A2E',
-  darkLight: '#25254A',
-  darkAccent: '#2D2D5E',
+  dark: '#090B11',
+  darkLight: '#171A21',
+  darkAccent: '#242835',
 
-  // Accent — basketball orange
-  accent: '#E8712A',
-  accentDark: '#D4631F',
+  // Accent — premium vibrant orange
+  accent: '#FF5C16',
+  accentDark: '#E34A0B',
   accentLight: '#FFF0E6',
-  accentGlow: 'rgba(232, 113, 42, 0.15)',
+  accentGlow: 'rgba(255, 92, 22, 0.25)',
 
   // Text
-  text: '#1A1A2E',
-  textSecondary: '#6B7080',
-  textLight: '#9BA1B0',
+  text: '#171A21',
+  textSecondary: '#586376',
+  textLight: '#8E9BAE',
   textWhite: '#FFFFFF',
 
   // Borders
-  border: '#E8E9ED',
-  borderLight: '#F0F1F3',
+  border: 'rgba(23, 26, 33, 0.08)',
+  borderLight: 'rgba(23, 26, 33, 0.04)',
 
   // Status
-  success: '#2ECC71',
-  successLight: '#E8F8F0',
-  warning: '#F1C40F',
-  warningLight: '#FEF3E2',
-  danger: '#E74C3C',
-  dangerLight: '#FDECEB',
-  info: '#3498DB',
+  success: '#10B981',
+  successLight: '#D1FAE5',
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  danger: '#EF4444',
+  dangerLight: '#FEE2E2',
+  info: '#3B82F6',
 
   // Difficulty
-  beginner: '#2ECC71',
-  intermediate: '#F39C12',
-  advanced: '#E74C3C',
+  beginner: '#10B981',
+  intermediate: '#F59E0B',
+  advanced: '#EF4444',
 };
 
 export const SPACING = {
@@ -52,10 +52,10 @@ export const SPACING = {
 };
 
 export const RADIUS = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 20,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
   full: 9999,
 };
 
@@ -64,40 +64,48 @@ export const FONTS = {
   medium: { fontWeight: '500' },
   semibold: { fontWeight: '600' },
   bold: { fontWeight: '700' },
+  heavy: { fontWeight: '800' },
   sizes: {
-    xs: 11,
-    sm: 13,
-    body: 15,
-    md: 17,
-    lg: 20,
-    xl: 24,
-    xxl: 32,
-    hero: 40,
+    xs: 12,
+    sm: 14,
+    body: 16,
+    md: 18,
+    lg: 22,
+    xl: 28,
+    xxl: 36,
+    hero: 44,
   },
 };
 
 export const SHADOWS = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 2,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
     elevation: 4,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.08,
+    shadowRadius: 32,
     elevation: 8,
   },
+  glow: {
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  }
 };
 
 // Drill category display labels
@@ -124,7 +132,7 @@ export const DIFFICULTY_LABELS = {
 };
 
 export const DIFFICULTY_COLORS = {
-  beginner: { bg: COLORS.successLight, text: '#1B8A4E' },
-  intermediate: { bg: COLORS.warningLight, text: '#C27A0E' },
-  advanced: { bg: COLORS.dangerLight, text: '#C0392B' },
+  beginner: { bg: COLORS.successLight, text: '#065F46' },
+  intermediate: { bg: COLORS.warningLight, text: '#92400E' },
+  advanced: { bg: COLORS.dangerLight, text: '#991B1B' },
 };

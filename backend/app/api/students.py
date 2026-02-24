@@ -13,9 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.workout import WorkoutAssignment, AssignmentStatus
-from app.models.progress import DrillCompletion
+from app.models.progress import DrillCompletion, UserBadge
 from app.schemas.user import StudentAdminView, UserUpdate
 from app.services.auth import require_coach
+from sqlalchemy.orm import selectinload
 
 router = APIRouter(prefix="/api/students", tags=["Students"])
 
@@ -31,6 +32,7 @@ async def list_students(
     """
     result = await db.execute(
         select(User)
+        .options(selectinload(User.badges).selectinload(UserBadge.badge))
         .where(User.role == UserRole.STUDENT)
         .order_by(User.last_name, User.first_name)
     )
@@ -81,7 +83,9 @@ async def get_student(
 ):
     """Get detailed student profile with stats. Coach only."""
     result = await db.execute(
-        select(User).where(User.id == student_id, User.role == UserRole.STUDENT)
+        select(User)
+        .options(selectinload(User.badges).selectinload(UserBadge.badge))
+        .where(User.id == student_id, User.role == UserRole.STUDENT)
     )
     student = result.scalar_one_or_none()
     if not student:
@@ -99,7 +103,9 @@ async def update_student(
 ):
     """Update a student's profile. Coach only."""
     result = await db.execute(
-        select(User).where(User.id == student_id, User.role == UserRole.STUDENT)
+        select(User)
+        .options(selectinload(User.badges).selectinload(UserBadge.badge))
+        .where(User.id == student_id, User.role == UserRole.STUDENT)
     )
     student = result.scalar_one_or_none()
     if not student:

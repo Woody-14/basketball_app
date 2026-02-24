@@ -18,6 +18,7 @@ class DrillCreate(BaseModel):
     default_duration_seconds: Optional[int] = None
     default_reps: Optional[int] = None
     default_sets: Optional[int] = None
+    video_key: Optional[str] = None
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     tag_ids: list[int] = []  # IDs of existing tags to attach
@@ -32,6 +33,7 @@ class DrillUpdate(BaseModel):
     default_duration_seconds: Optional[int] = None
     default_reps: Optional[int] = None
     default_sets: Optional[int] = None
+    video_key: Optional[str] = None
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     tag_ids: Optional[list[int]] = None

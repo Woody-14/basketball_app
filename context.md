@@ -430,10 +430,10 @@ admin-dashboard/
 - ✅ Data models: Users, Drills, Workouts, Assignments, Completions, Badges, Skill Assessments
 - ✅ Authentication (JWT + bcrypt, role-based: coach vs student)
 - ✅ Admin dashboard: login, dashboard overview, drill library (CRUD + search/filter), workout builder, student roster, workout assignment
-- ⬜ **Video upload** — replace URL field with actual S3 file upload for drill demo videos
-- ⬜ **Student mobile app** (React Native + Expo) — students view/complete assigned workouts
-- ⬜ Basic messaging between coach and student
-- ⬜ Workout completion tracking (student marks drills done)
+- ✅ **Video upload** — replace URL field with actual S3 file upload for drill demo videos
+- ✅ **Student mobile app** (React Native + Expo) — students view/complete assigned workouts
+- ✅ Basic messaging between coach and student
+- ✅ Workout completion tracking (student marks drills done)
 - ⬜ Simple badge/streak auto-awarding
 
 ### Phase 2: Core Experience

@@ -26,15 +26,22 @@ export default function ProfileScreen({ navigation }) {
     );
   }
 
-  // Placeholder badges — will come from the API later
-  const badges = [
-    { id: 1, name: 'First Workout', emoji: '🏀', earned: true },
-    { id: 2, name: '7-Day Streak', emoji: '🔥', earned: false },
-    { id: 3, name: '10 Workouts', emoji: '💪', earned: false },
-    { id: 4, name: 'Perfect Week', emoji: '⭐', earned: false },
-    { id: 5, name: '30-Day Streak', emoji: '🏆', earned: false },
-    { id: 6, name: '50 Workouts', emoji: '🎯', earned: false },
+  // Merge user's earned badges with the static list to show what's locked/unlocked
+  const earnedBadgeNames = new Set((user?.badges || []).map(b => b.name));
+
+  const builtInBadges = [
+    { id: 1, name: 'First Workout', emoji: '🏀' },
+    { id: 2, name: '7-Day Streak', emoji: '🔥' },
+    { id: 3, name: '10 Workouts', emoji: '💪' },
+    { id: 4, name: 'Perfect Week', emoji: '⭐' },
+    { id: 5, name: '30-Day Streak', emoji: '🏆' },
+    { id: 6, name: '50 Workouts', emoji: '🎯' },
   ];
+
+  const badges = builtInBadges.map(b => ({
+    ...b,
+    earned: earnedBadgeNames.has(b.name),
+  }));
 
   return (
     <View style={styles.container}>

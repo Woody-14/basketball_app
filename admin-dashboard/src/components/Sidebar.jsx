@@ -8,14 +8,15 @@
  */
 
 import { Link } from 'react-router-dom'
-import { 
-  LayoutDashboard, Dumbbell, ClipboardList, 
-  Users, LogOut, Settings 
+import {
+  LayoutDashboard, Dumbbell, ClipboardList,
+  Users, LogOut, Settings, MessageSquare
 } from 'lucide-react'
 
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/messages', label: 'Messages', icon: MessageSquare },
   { path: '/drills', label: 'Drill Library', icon: Dumbbell },
   { path: '/workouts', label: 'Workouts', icon: ClipboardList },
   { path: '/students', label: 'Students', icon: Users },
@@ -37,9 +38,9 @@ export default function Sidebar({ currentPath, onLogout }) {
       <nav className="sidebar-nav">
         {navItems.map(item => {
           const Icon = item.icon
-          const isActive = currentPath === item.path || 
+          const isActive = currentPath === item.path ||
             (item.path !== '/' && currentPath.startsWith(item.path))
-          
+
           return (
             <Link
               key={item.path}

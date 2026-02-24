@@ -1,3 +1,14 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.database import get_db
+from app.models.workout import WorkoutAssignment
+from app.services.auth import get_current_user
+
+router = APIRouter(tags=["Assignments"])
+
 @router.get("/assignments/me")
 async def get_my_assignments(
     start_date: str = None,

@@ -15,7 +15,7 @@ GET    /api/drills/tags      — List all tags
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -28,7 +28,7 @@ from app.schemas.drill import (
     TagCreate, TagResponse,
 )
 from app.services.auth import get_current_user, require_coach
-from app.services.storage import get_presigned_url
+from app.services.storage import get_presigned_url, upload_file, delete_file
 
 router = APIRouter(prefix="/api/drills", tags=["Drills"])
 
@@ -88,6 +88,7 @@ async def create_drill(
         default_reps=data.default_reps,
         default_sets=data.default_sets,
         video_url=data.video_url,
+        video_key=data.video_key,
         thumbnail_url=data.thumbnail_url,
     )
 

@@ -33,6 +33,7 @@ from app.schemas.workout import (
     AssignmentCreate, BulkAssignmentCreate, AssignmentResponse,
 )
 from app.services.auth import get_current_user, require_coach
+from app.services.badges import evaluate_badges
 
 router = APIRouter(tags=["Workouts & Assignments"])
 
@@ -367,6 +368,11 @@ async def complete_assignment(
         student.current_streak = (student.current_streak or 0) + 1
         if student.current_streak > (student.longest_streak or 0):
             student.longest_streak = student.current_streak
+
+        await db.flush()
+
+        # Evaluate and award badges
+        await evaluate_badges(student, db)
 
     await db.flush()
 

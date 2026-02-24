@@ -40,8 +40,15 @@ export function AuthProvider({ children }) {
             return;
           }
         } catch (e) {
-          // Server unreachable — fall back to cached data
+          // If it's a token error, we've already cleared the token in api.js
+          // We must NOT log them in.
+          if (e.message.includes('Invalid or expired token')) {
+            setIsAuthenticated(false);
+            return;
+          }
+          // Only fallback to cached data if it's a network error (server unreachable)
         }
+
         const cached = await api.getCachedUser();
         if (cached) {
           setUser(cached);

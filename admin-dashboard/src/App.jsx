@@ -80,6 +80,7 @@ function AppLayout() {
           <Route path="/drills" element={<DrillsPage />} />
           <Route path="/workouts" element={<WorkoutsPage />} />
           <Route path="/students" element={<StudentsPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
           {/* Catch-all: redirect unknown routes to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
