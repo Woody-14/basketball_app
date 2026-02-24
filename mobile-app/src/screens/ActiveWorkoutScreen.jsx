@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS, CATEGORY_LABELS } from '../constants/theme';
-import { getWorkout, completeWorkout } from '../services/api';
+import { getWorkout, completeWorkout, createCompletion, submitFormCheck } from '../services/api';
+import * as ImagePicker from 'expo-image-picker';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -30,6 +31,8 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
   const [drillTimerActive, setDrillTimerActive] = useState(false);
   const [drillTimerSeconds, setDrillTimerSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [videoUris, setVideoUris] = useState({});   // { [drillIndex]: uri }
+  const [uploading, setUploading] = useState(false);
 
   const timerRef = useRef(null);
   const drillTimerRef = useRef(null);
@@ -94,9 +97,14 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
   }
 
   function handleFinishWorkout() {
+    const videoCount = Object.keys(videoUris).length;
+    const videoNote = videoCount > 0
+      ? `\n${videoCount} form check video${videoCount > 1 ? 's' : ''} will be uploaded.`
+      : '';
+
     Alert.alert(
       'Finish Workout?',
-      `You completed ${completedDrills.size} of ${drills.length} drills in ${formatTime(elapsedSeconds)}.`,
+      `You completed ${completedDrills.size} of ${drills.length} drills in ${formatTime(elapsedSeconds)}.${videoNote}`,
       [
         { text: 'Keep Going', style: 'cancel' },
         {
@@ -108,9 +116,29 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
                 total_seconds: elapsedSeconds,
               });
             } catch (err) {
-              // If the endpoint doesn't exist yet, that's okay — just navigate
-              console.log('Completion API not yet available:', err.message);
+              console.log('completeWorkout error:', err.message);
             }
+
+            if (Object.keys(videoUris).length > 0) {
+              setUploading(true);
+              try {
+                const completion = await createCompletion(assignment.id, elapsedSeconds);
+                await Promise.all(
+                  Object.entries(videoUris).map(([idx, uri]) =>
+                    submitFormCheck(completion.id, drills[Number(idx)].id, uri)
+                  )
+                );
+              } catch (err) {
+                console.log('Video upload error:', err.message);
+                Alert.alert(
+                  'Upload Issue',
+                  'Some videos may not have uploaded. Your workout was still saved.'
+                );
+              } finally {
+                setUploading(false);
+              }
+            }
+
             navigation.replace('WorkoutComplete', {
               drillsCompleted: completedDrills.size,
               totalDrills: drills.length,
@@ -120,6 +148,32 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
         },
       ]
     );
+  }
+
+  async function handleRecordVideo(drillIndex) {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      let result;
+      if (status === 'granted') {
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: 'videos',
+          videoMaxDuration: 120,
+          quality: 0.7,
+          allowsEditing: false,
+        });
+      } else {
+        // Fallback: let them pick from gallery
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: 'videos',
+          quality: 0.7,
+        });
+      }
+      if (!result.canceled && result.assets?.[0]) {
+        setVideoUris(prev => ({ ...prev, [drillIndex]: result.assets[0].uri }));
+      }
+    } catch (err) {
+      Alert.alert('Camera Error', 'Could not open camera. Please check permissions and try again.');
+    }
   }
 
   function handleQuit() {
@@ -202,6 +256,17 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Uploading Overlay */}
+      {uploading && (
+        <View style={styles.uploadingOverlay}>
+          <View style={styles.uploadingContent}>
+            <Ionicons name="cloud-upload-outline" size={40} color={COLORS.accent} />
+            <Text style={styles.uploadingText}>Uploading videos...</Text>
+            <Text style={styles.uploadingSubtext}>Please wait</Text>
+          </View>
+        </View>
+      )}
 
       {/* Pause Overlay */}
       {isPaused && (
@@ -309,6 +374,29 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
             <Text style={styles.notesText}>{currentItem.notes}</Text>
           </View>
         )}
+
+        {/* Form Check — Record Video */}
+        <View style={styles.formCheckSection}>
+          <TouchableOpacity
+            style={[
+              styles.formCheckBtn,
+              videoUris[currentDrillIndex] && styles.formCheckBtnDone,
+            ]}
+            onPress={() => handleRecordVideo(currentDrillIndex)}
+          >
+            <Ionicons
+              name={videoUris[currentDrillIndex] ? 'checkmark-circle' : 'camera-outline'}
+              size={20}
+              color={videoUris[currentDrillIndex] ? COLORS.success : COLORS.accent}
+            />
+            <Text style={[
+              styles.formCheckBtnText,
+              videoUris[currentDrillIndex] && styles.formCheckBtnTextDone,
+            ]}>
+              {videoUris[currentDrillIndex] ? 'Video Recorded ✓' : 'Record Form Check'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 140 }} />
       </ScrollView>
@@ -712,5 +800,63 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '700',
     fontSize: FONTS.sizes.body,
+  },
+
+  // Form check video recording
+  formCheckSection: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+  },
+  formCheckBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.md,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+    borderStyle: 'dashed',
+  },
+  formCheckBtnDone: {
+    backgroundColor: COLORS.successLight,
+    borderColor: COLORS.success,
+    borderStyle: 'solid',
+  },
+  formCheckBtnText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.accent,
+  },
+  formCheckBtnTextDone: {
+    color: COLORS.success,
+  },
+
+  // Uploading overlay
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200,
+  },
+  uploadingContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    gap: SPACING.sm,
+    minWidth: 200,
+  },
+  uploadingText: {
+    fontSize: FONTS.sizes.body,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginTop: SPACING.sm,
+  },
+  uploadingSubtext: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textSecondary,
   },
 });

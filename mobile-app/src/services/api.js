@@ -165,9 +165,6 @@ export async function getMyProfile() {
 
 // ---------- WORKOUT COMPLETION ----------
 
-// TODO: These endpoints need to be added to the backend
-// Stubbed here so the mobile app is ready when they exist
-
 export async function completeWorkout(assignmentId, completionData) {
   return request(`/assignments/${assignmentId}/complete`, {
     method: 'PATCH',
@@ -175,21 +172,34 @@ export async function completeWorkout(assignmentId, completionData) {
   });
 }
 
-export async function completeDrill(completionId, drillData) {
-  return request(`/completions/${completionId}/drills`, {
+// Creates a WorkoutCompletion record after marking the assignment done.
+// Returns { id } — pass this id to submitFormCheck for each drill video.
+export async function createCompletion(assignmentId, totalSeconds) {
+  return request('/completions', {
     method: 'POST',
-    body: JSON.stringify(drillData),
+    body: JSON.stringify({ assignment_id: assignmentId, total_seconds: totalSeconds }),
   });
 }
 
-export async function submitFormCheckVideo(drillCompletionId, videoUri) {
+
+// ---------- FORM CHECKS ----------
+
+// Upload a form check video for a specific drill. Uses multipart form upload.
+export async function submitFormCheck(completionId, workoutDrillId, videoUri) {
+  const ext = videoUri.split('.').pop()?.toLowerCase() || 'mp4';
+  const mimeMap = { mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/x-m4v', avi: 'video/x-msvideo', webm: 'video/webm' };
+  const type = mimeMap[ext] || 'video/mp4';
+
   const formData = new FormData();
-  formData.append('video', {
-    uri: videoUri,
-    type: 'video/mp4',
-    name: 'form_check.mp4',
-  });
-  return uploadRequest(`/completions/drills/${drillCompletionId}/video`, formData);
+  formData.append('completion_id', String(completionId));
+  formData.append('workout_drill_id', String(workoutDrillId));
+  formData.append('video', { uri: videoUri, type, name: `form_check.${ext}` });
+  return uploadRequest('/form-checks', formData);
+}
+
+// Student: get own form check history with coach feedback
+export async function getMyFormChecks() {
+  return request('/form-checks/mine');
 }
 
 

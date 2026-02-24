@@ -19,6 +19,7 @@ import DrillsPage from './pages/DrillsPage'
 import WorkoutsPage from './pages/WorkoutsPage'
 import StudentsPage from './pages/StudentsPage'
 import MessagesPage from './pages/MessagesPage'
+import VideoReviewPage from './pages/VideoReviewPage'
 
 // Components
 import Sidebar from './components/Sidebar'
@@ -81,6 +82,7 @@ function AppLayout() {
           <Route path="/workouts" element={<WorkoutsPage />} />
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/video-review" element={<VideoReviewPage />} />
           {/* Catch-all: redirect unknown routes to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

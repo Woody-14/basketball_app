@@ -128,6 +128,17 @@ export default function ProfileScreen({ navigation }) {
 
             <View style={styles.menuDivider} />
 
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('FormChecks')}
+            >
+              <Ionicons name="videocam-outline" size={22} color={COLORS.text} />
+              <Text style={styles.menuItemText}>Form Checks</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
             <TouchableOpacity style={styles.menuItem}>
               <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
               <Text style={styles.menuItemText}>Notifications</Text>

@@ -228,3 +228,17 @@ export async function sendMessageToStudent(studentId, content) {
 export async function markConversationRead(studentId) {
   return request(`/messages/read?student_id=${studentId}`, { method: 'PATCH' });
 }
+
+
+// ---------- FORM CHECKS (Video Review) ----------
+
+export async function getPendingReviews() {
+  return request('/form-checks/pending');
+}
+
+export async function submitFeedback(formCheckId, feedback) {
+  return request(`/form-checks/${formCheckId}/feedback`, {
+    method: 'PATCH',
+    body: JSON.stringify({ feedback }),
+  });
+}

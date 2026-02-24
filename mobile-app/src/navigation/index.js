@@ -29,6 +29,7 @@ import ActiveWorkoutScreen from '../screens/ActiveWorkoutScreen';
 import DrillDetailScreen from '../screens/DrillDetailScreen';
 import WorkoutCompleteScreen from '../screens/WorkoutCompleteScreen';
 import MessagesScreen from '../screens/MessagesScreen';
+import FormChecksScreen from '../screens/FormChecksScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -144,6 +145,11 @@ export function AppStack() {
         name="Messages"
         component={MessagesScreen}
         options={{ title: 'Coach' }}
+      />
+      <Stack.Screen
+        name="FormChecks"
+        component={FormChecksScreen}
+        options={{ title: 'Form Checks' }}
       />
     </Stack.Navigator>
   );

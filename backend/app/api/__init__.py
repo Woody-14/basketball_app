@@ -3,6 +3,7 @@ from app.api.drills import router as drills_router
 from app.api.workouts import router as workouts_router
 from app.api.students import router as students_router
 from app.api.messages import router as messages_router
+from app.api.completions import router as completions_router
 
 all_routers = [
     auth_router,
@@ -10,4 +11,5 @@ all_routers = [
     workouts_router,
     students_router,
     messages_router,
+    completions_router,
 ]
