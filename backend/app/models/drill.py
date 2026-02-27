@@ -104,9 +104,13 @@ class Drill(Base):
     workout_drills: Mapped[list["WorkoutDrill"]] = relationship(
         "WorkoutDrill", back_populates="drill"
     )
+    phases: Mapped[list["DrillPhase"]] = relationship(
+        "DrillPhase", cascade="all, delete-orphan", lazy="noload"
+    )
 
     def __repr__(self):
         return f"<Drill '{self.name}' ({self.category.value}, {self.difficulty.value})>"
 
 
 from app.models.workout import WorkoutDrill  # noqa: E402
+from app.models.phase import DrillPhase  # noqa: E402

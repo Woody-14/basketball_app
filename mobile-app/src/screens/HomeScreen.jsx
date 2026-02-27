@@ -39,6 +39,55 @@ function getWeekDates() {
 
 const DAY_NAMES = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
+// Training phase metadata — must match backend TrainingPhase enum
+const PHASE_META = {
+  foundation:        { label: 'Foundation',        description: 'Mechanics & high-volume skill building', weeklyTarget: 5, color: '#7C3AED' },
+  skill_development: { label: 'Skill Development', description: 'Game-specific moves & combination skills', weeklyTarget: 4, color: '#2563EB' },
+  pre_season:        { label: 'Pre-Season',         description: 'Game-speed reps & situational preparation', weeklyTarget: 3, color: '#D97706' },
+  in_season:         { label: 'In-Season',          description: 'Maintenance & game readiness', weeklyTarget: 2, color: '#16A34A' },
+  post_season:       { label: 'Post-Season',        description: 'Active recovery & reflection', weeklyTarget: 1, color: '#6B7280' },
+};
+
+function PhaseBanner({ phase }) {
+  const meta = PHASE_META[phase];
+  if (!meta) return null;
+  return (
+    <View style={[phaseStyles.banner, { borderLeftColor: meta.color }]}>
+      <View style={{ flex: 1 }}>
+        <Text style={phaseStyles.phaseLabel}>TRAINING PHASE</Text>
+        <Text style={[phaseStyles.phaseName, { color: meta.color }]}>{meta.label}</Text>
+        <Text style={phaseStyles.phaseDesc}>{meta.description}</Text>
+      </View>
+      <View style={[phaseStyles.targetPill, { backgroundColor: meta.color + '18' }]}>
+        <Text style={[phaseStyles.targetNum, { color: meta.color }]}>{meta.weeklyTarget}×</Text>
+        <Text style={phaseStyles.targetLabel}>per wk</Text>
+      </View>
+    </View>
+  );
+}
+
+// XP level thresholds — must match backend xp.py
+const XP_LEVELS = [
+  { level: 7, name: 'Legend',     threshold: 30000 },
+  { level: 6, name: 'Pro',        threshold: 15000 },
+  { level: 5, name: 'All-Star',   threshold: 7500  },
+  { level: 4, name: 'Varsity',    threshold: 3500  },
+  { level: 3, name: 'Starter',    threshold: 1500  },
+  { level: 2, name: 'Rising Star',threshold: 500   },
+  { level: 1, name: 'Rookie',     threshold: 0     },
+];
+
+function getLevelInfo(xp) {
+  const current = XP_LEVELS.find(l => xp >= l.threshold) || XP_LEVELS[XP_LEVELS.length - 1];
+  const nextLevel = XP_LEVELS.find(l => l.threshold > xp);
+  return {
+    name: current.name,
+    level: current.level,
+    nextThreshold: nextLevel?.threshold || null,
+    progress: nextLevel ? (xp - current.threshold) / (nextLevel.threshold - current.threshold) : 1,
+  };
+}
+
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -121,6 +170,9 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.accent} />
         }
       >
+        {/* Training Phase Banner */}
+        {user?.training_phase && <PhaseBanner phase={user.training_phase} />}
+
         {/* Week Overview */}
         <View style={styles.weekCard}>
           <Text style={styles.weekTitle}>This Week</Text>
@@ -131,6 +183,9 @@ export default function HomeScreen({ navigation }) {
               const hasWorkout = assignmentDates.has(dateStr);
               const isCompleted = completedDates.has(dateStr);
 
+              // Today+assigned: use today style (accent). Only show assigned style on non-today days.
+              const showAssigned = hasWorkout && !isCompleted && !isToday;
+
               return (
                 <View key={i} style={styles.dayCol}>
                   <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
@@ -139,7 +194,7 @@ export default function HomeScreen({ navigation }) {
                   <View style={[
                     styles.dayDot,
                     isToday && styles.dayDotToday,
-                    hasWorkout && !isCompleted && styles.dayDotAssigned,
+                    showAssigned && styles.dayDotAssigned,
                     isCompleted && styles.dayDotCompleted,
                   ]}>
                     {isCompleted ? (
@@ -148,11 +203,22 @@ export default function HomeScreen({ navigation }) {
                       <Text style={[
                         styles.dayNumber,
                         isToday && styles.dayNumberToday,
+                        showAssigned && styles.dayNumberAssigned,
                       ]}>
                         {date.getDate()}
                       </Text>
                     )}
                   </View>
+                  {/* Small indicator dot below circle */}
+                  {(hasWorkout || isToday) && (
+                    <View style={[
+                      styles.dayIndicatorDot,
+                      isCompleted && { backgroundColor: COLORS.success },
+                      showAssigned && { backgroundColor: COLORS.warning },
+                      isToday && !hasWorkout && { backgroundColor: COLORS.accent },
+                      isToday && hasWorkout && !isCompleted && { backgroundColor: COLORS.accent },
+                    ]} />
+                  )}
                 </View>
               );
             })}
@@ -274,7 +340,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <View style={styles.statCard}>
             <Ionicons name="trophy-outline" size={24} color={COLORS.warning} />
-            <Text style={styles.statValue}>{user?.badges_count || 0}</Text>
+            <Text style={styles.statValue}>{user?.badges?.length || 0}</Text>
             <Text style={styles.statLabel}>Badges</Text>
           </View>
           <View style={styles.statCard}>
@@ -283,6 +349,33 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.statLabel}>This Week</Text>
           </View>
         </View>
+
+        {/* XP Progress */}
+        {(() => {
+          const xp = user?.xp || 0;
+          const { name, level, nextThreshold, progress } = getLevelInfo(xp);
+          return (
+            <View style={styles.xpCard}>
+              <View style={styles.xpHeader}>
+                <View style={styles.xpLevelBadge}>
+                  <Text style={styles.xpLevelText}>Lv {level}</Text>
+                </View>
+                <Text style={styles.xpLevelName}>{name}</Text>
+                <Text style={styles.xpTotal}>{xp.toLocaleString()} XP</Text>
+              </View>
+              <View style={styles.xpBarBg}>
+                <View style={[styles.xpBarFill, { width: `${Math.min(progress * 100, 100)}%` }]} />
+              </View>
+              {nextThreshold ? (
+                <Text style={styles.xpNextLabel}>
+                  {(nextThreshold - xp).toLocaleString()} XP to next level
+                </Text>
+              ) : (
+                <Text style={styles.xpNextLabel}>Maximum level reached!</Text>
+              )}
+            </View>
+          );
+        })()}
 
         {/* Bottom padding */}
         <View style={{ height: 40 }} />
@@ -378,7 +471,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.accent,
   },
   dayDotAssigned: {
-    backgroundColor: COLORS.darkLight,
+    backgroundColor: COLORS.warningLight,
+    borderWidth: 1.5,
+    borderColor: COLORS.warning,
   },
   dayDotCompleted: {
     backgroundColor: COLORS.success,
@@ -391,6 +486,17 @@ const styles = StyleSheet.create({
   dayNumberToday: {
     color: COLORS.accent,
     fontWeight: '700',
+  },
+  dayNumberAssigned: {
+    color: '#D97706',
+    fontWeight: '700',
+  },
+  dayIndicatorDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+    marginTop: 2,
   },
   weekStats: {
     marginTop: SPACING.md,
@@ -569,5 +675,106 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontWeight: '600',
     marginTop: 2,
+  },
+
+  // XP Progress Card
+  xpCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginTop: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  xpHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  xpLevelBadge: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  xpLevelText: {
+    fontSize: FONTS.sizes.xs,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  xpLevelName: {
+    flex: 1,
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  xpTotal: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.accent,
+  },
+  xpBarBg: {
+    height: 6,
+    backgroundColor: COLORS.bg,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: SPACING.xs,
+  },
+  xpBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.accent,
+    borderRadius: 3,
+  },
+  xpNextLabel: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textLight,
+    fontWeight: '500',
+  },
+});
+
+const phaseStyles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    marginTop: SPACING.lg,
+    padding: SPACING.md,
+    borderLeftWidth: 4,
+    ...SHADOWS.sm,
+  },
+  phaseLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.textLight,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  phaseName: {
+    fontSize: FONTS.sizes.body,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  phaseDesc: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textSecondary,
+    lineHeight: 16,
+  },
+  targetPill: {
+    marginLeft: SPACING.md,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    alignItems: 'center',
+    minWidth: 48,
+  },
+  targetNum: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: '800',
+  },
+  targetLabel: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
 });

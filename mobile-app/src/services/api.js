@@ -59,10 +59,19 @@ async function request(endpoint, options = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (response.status === 204) return null;
 
@@ -83,14 +92,23 @@ async function request(endpoint, options = {}) {
 // For file uploads (video form checks)
 async function uploadRequest(endpoint, formData) {
   const token = await getToken();
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      // Don't set Content-Type — fetch sets it automatically with boundary for FormData
-    },
-    body: formData,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s for video uploads
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        // Don't set Content-Type — fetch sets it automatically with boundary for FormData
+      },
+      body: formData,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const data = await response.json();
 
@@ -140,6 +158,13 @@ export async function getWorkout(id) {
 }
 
 
+// ---------- CONTENT FEED ----------
+
+export async function getFeed() {
+  return request('/feed');
+}
+
+
 // ---------- DRILLS ----------
 
 export async function getDrill(id) {
@@ -151,6 +176,7 @@ export async function getDrills(filters = {}) {
   if (filters.category) params.append('category', filters.category);
   if (filters.difficulty) params.append('difficulty', filters.difficulty);
   if (filters.search) params.append('search', filters.search);
+  if (filters.phase) params.append('phase', filters.phase);
   const query = params.toString();
   return request(`/drills${query ? `?${query}` : ''}`);
 }
@@ -218,4 +244,25 @@ export async function sendMessage(content) {
 
 export async function markMessagesRead() {
   return request('/messages/read', { method: 'PATCH' });
+}
+
+
+// ---------- SKILL ASSESSMENTS ----------
+
+export async function getMySkillAssessment() {
+  return request('/skill-assessments/mine');
+}
+
+export async function registerPushToken(token) {
+  return request('/auth/push-token', {
+    method: 'PUT',
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  return request('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
 }

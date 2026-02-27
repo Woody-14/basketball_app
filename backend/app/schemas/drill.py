@@ -4,9 +4,10 @@ Pydantic schemas for Drill-related API requests and responses.
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.models.drill import DrillCategory, DrillDifficulty
+from app.models.phase import TrainingPhase
 
 
 class DrillCreate(BaseModel):
@@ -22,6 +23,7 @@ class DrillCreate(BaseModel):
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     tag_ids: list[int] = []  # IDs of existing tags to attach
+    phases: list[TrainingPhase] = []  # Training phases this drill belongs to
 
 
 class DrillUpdate(BaseModel):
@@ -37,6 +39,7 @@ class DrillUpdate(BaseModel):
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     tag_ids: Optional[list[int]] = None
+    phases: Optional[list[TrainingPhase]] = None  # None = don't change; [] = remove all
 
 
 class TagResponse(BaseModel):
@@ -60,9 +63,18 @@ class DrillResponse(BaseModel):
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     tags: list[TagResponse] = []
+    phases: list[TrainingPhase] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator('phases', mode='before')
+    @classmethod
+    def extract_phases(cls, v):
+        # DrillPhase ORM rows → plain TrainingPhase enum values (runs before per-item validation)
+        if not v:
+            return []
+        return [item.phase if hasattr(item, 'phase') else item for item in v]
 
 
 class DrillListResponse(BaseModel):
@@ -73,8 +85,16 @@ class DrillListResponse(BaseModel):
     difficulty: DrillDifficulty
     thumbnail_url: Optional[str] = None
     tags: list[TagResponse] = []
+    phases: list[TrainingPhase] = []
 
     model_config = {"from_attributes": True}
+
+    @field_validator('phases', mode='before')
+    @classmethod
+    def extract_phases(cls, v):
+        if not v:
+            return []
+        return [item.phase if hasattr(item, 'phase') else item for item in v]
 
 
 class TagCreate(BaseModel):

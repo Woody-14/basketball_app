@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, Dimensions,
+  StyleSheet, Alert, Dimensions, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS, CATEGORY_LABELS } from '../constants/theme';
@@ -31,6 +31,9 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
   const [drillTimerActive, setDrillTimerActive] = useState(false);
   const [drillTimerSeconds, setDrillTimerSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [countdown, setCountdown] = useState(null); // null=off, 3/2/1=counting, 0=GO!
+  const [pendingTimerSeconds, setPendingTimerSeconds] = useState(0);
+  const countdownScale = useRef(new Animated.Value(1)).current;
   const [videoUris, setVideoUris] = useState({});   // { [drillIndex]: uri }
   const [uploading, setUploading] = useState(false);
 
@@ -92,9 +95,36 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
   }
 
   function handleStartDrillTimer(seconds) {
-    setDrillTimerSeconds(seconds);
-    setDrillTimerActive(true);
+    setPendingTimerSeconds(seconds);
+    setCountdown(3);
   }
+
+  // Countdown logic — 3 → 2 → 1 → GO! → start timer
+  useEffect(() => {
+    if (countdown === null) return;
+
+    // Animate scale: pop in from large to normal
+    countdownScale.setValue(1.6);
+    Animated.spring(countdownScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 120,
+      friction: 7,
+    }).start();
+
+    if (countdown > 0) {
+      const t = setTimeout(() => setCountdown(c => c - 1), 900);
+      return () => clearTimeout(t);
+    } else {
+      // countdown === 0 → "GO!" — brief pause then start timer
+      const t = setTimeout(() => {
+        setCountdown(null);
+        setDrillTimerSeconds(pendingTimerSeconds);
+        setDrillTimerActive(true);
+      }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [countdown]);
 
   function handleFinishWorkout() {
     const videoCount = Object.keys(videoUris).length;
@@ -110,8 +140,9 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
         {
           text: 'Finish',
           onPress: async () => {
+            let completionResult = null;
             try {
-              await completeWorkout(assignment.id, {
+              completionResult = await completeWorkout(assignment.id, {
                 completed_drills: [...completedDrills],
                 total_seconds: elapsedSeconds,
               });
@@ -143,6 +174,9 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
               drillsCompleted: completedDrills.size,
               totalDrills: drills.length,
               timeSeconds: elapsedSeconds,
+              xpEarned: completionResult?.xp_earned || 0,
+              newBadges: completionResult?.new_badges || [],
+              newLevel: completionResult?.new_level || null,
             });
           },
         },
@@ -256,6 +290,22 @@ export default function ActiveWorkoutScreen({ route, navigation }) {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* 3-2-1 Countdown Overlay */}
+      {countdown !== null && (
+        <View style={styles.countdownOverlay}>
+          <Animated.Text style={[
+            styles.countdownNumber,
+            countdown === 0 && styles.countdownGo,
+            { transform: [{ scale: countdownScale }] },
+          ]}>
+            {countdown > 0 ? String(countdown) : 'GO!'}
+          </Animated.Text>
+          {countdown > 0 && (
+            <Text style={styles.countdownLabel}>GET READY</Text>
+          )}
+        </View>
+      )}
 
       {/* Uploading Overlay */}
       {uploading && (
@@ -831,6 +881,32 @@ const styles = StyleSheet.create({
   },
   formCheckBtnTextDone: {
     color: COLORS.success,
+  },
+
+  // Countdown overlay
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.88)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 150,
+  },
+  countdownNumber: {
+    fontSize: 110,
+    fontWeight: '900',
+    color: COLORS.accent,
+    textAlign: 'center',
+  },
+  countdownGo: {
+    color: COLORS.success,
+    fontSize: 80,
+  },
+  countdownLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 3,
+    marginTop: SPACING.md,
   },
 
   // Uploading overlay

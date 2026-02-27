@@ -25,9 +25,11 @@ class UserRole(str, enum.Enum):
 
 
 class SubscriptionTier(str, enum.Enum):
-    BASE = "base"           # 2-3 workouts/week, 20-30 min
-    STANDARD = "standard"   # 3-4 workouts/week, 30-45 min
-    ELITE = "elite"         # 5 workouts/week, 45-60 min
+    TRAINING = "training"   # $90/mo — 2-3 workouts/week, monthly session
+    ELITE    = "elite"      # $195/mo — 4-5 workouts/week, 2x monthly sessions
+    # Legacy values — kept so existing DB rows don't break; never offered to new students
+    BASE     = "base"
+    STANDARD = "standard"
 
 
 class User(Base):
@@ -67,6 +69,18 @@ class User(Base):
 
     # Coach private notes about this student (only visible in admin UI)
     coach_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Expo push notification token — set by the mobile app after login
+    push_token: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    # XP and level — updated on workout completion
+    xp: Mapped[int] = mapped_column(Integer, default=0)
+    level: Mapped[int] = mapped_column(Integer, default=1)
+
+    # Training phase (Drew Hanlen periodization) — set per-student by the coach
+    training_phase: Mapped[Optional[str]] = mapped_column(
+        String(30), nullable=True
+    )
 
     # Current streak (updated by the app when workouts are completed)
     current_streak: Mapped[int] = mapped_column(Integer, default=0)

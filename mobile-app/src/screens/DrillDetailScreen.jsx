@@ -5,7 +5,7 @@
  * sets/reps/duration, and difficulty level.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Dimensions, ActivityIndicator,
@@ -13,16 +13,28 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS, CATEGORY_LABELS, DIFFICULTY_COLORS } from '../constants/theme';
+import { getDrill } from '../services/api';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 
 export default function DrillDetailScreen({ route }) {
-  const { drill } = route.params;
+  const { drill: initialDrill } = route.params;
+  const [drill, setDrill] = useState(initialDrill);
   const videoRef = useRef(null);
   const [videoStatus, setVideoStatus] = useState({});
   const [videoLoading, setVideoLoading] = useState(true);
+
+  // If video_url is missing (drill came from a workout/assignment response where
+  // presigned URLs are not generated), fetch the drill directly to get a fresh URL.
+  useEffect(() => {
+    if (!initialDrill.video_url && initialDrill.id) {
+      getDrill(initialDrill.id)
+        .then(fresh => setDrill(fresh))
+        .catch(() => {}); // silently fail — no video shown
+    }
+  }, [initialDrill.id]);
 
   const diffColor = DIFFICULTY_COLORS[drill.difficulty] || DIFFICULTY_COLORS.beginner;
   const hasVideo = !!drill.video_url;

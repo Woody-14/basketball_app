@@ -44,6 +44,16 @@ const DIFFICULTY_LABELS = {
   advanced: 'Advanced',
 }
 
+export const PHASES = [
+  { value: 'foundation',        label: 'Foundation',        color: '#7C3AED', weeklyTarget: 5 },
+  { value: 'skill_development', label: 'Skill Development', color: '#2563EB', weeklyTarget: 4 },
+  { value: 'pre_season',        label: 'Pre-Season',        color: '#D97706', weeklyTarget: 3 },
+  { value: 'in_season',         label: 'In-Season',         color: '#16A34A', weeklyTarget: 2 },
+  { value: 'post_season',       label: 'Post-Season',       color: '#6B7280', weeklyTarget: 1 },
+]
+
+const PHASE_MAP = Object.fromEntries(PHASES.map(p => [p.value, p]))
+
 
 export default function DrillsPage() {
   const [drills, setDrills] = useState([])
@@ -56,6 +66,7 @@ export default function DrillsPage() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [difficultyFilter, setDifficultyFilter] = useState('')
+  const [phaseFilter, setPhaseFilter] = useState('')
 
   const showToast = useToast()
 
@@ -93,6 +104,9 @@ export default function DrillsPage() {
       return false
     }
     if (difficultyFilter && drill.difficulty !== difficultyFilter) {
+      return false
+    }
+    if (phaseFilter && !(drill.phases || []).includes(phaseFilter)) {
       return false
     }
     return true
@@ -188,6 +202,16 @@ export default function DrillsPage() {
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
+        <select
+          className="filter-select"
+          value={phaseFilter}
+          onChange={e => setPhaseFilter(e.target.value)}
+        >
+          <option value="">All Phases</option>
+          {PHASES.map(p => (
+            <option key={p.value} value={p.value}>{p.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Drill Grid */}
@@ -242,6 +266,29 @@ export default function DrillsPage() {
                     </span>
                   )}
                 </div>
+                {drill.phases && drill.phases.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                    {drill.phases.map(p => {
+                      const meta = PHASE_MAP[p]
+                      return meta ? (
+                        <span
+                          key={p}
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 10,
+                            background: meta.color + '18',
+                            color: meta.color,
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          {meta.label}
+                        </span>
+                      ) : null
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -284,7 +331,17 @@ function DrillFormModal({ drill, tags, onSave, onClose, onDelete }) {
     default_sets: drill?.default_sets || '',
     video_url: drill?.video_url || '',
     tag_ids: drill?.tags?.map(t => t.id) || [],
+    phases: drill?.phases || [],
   })
+
+  function togglePhase(phaseValue) {
+    setForm(prev => ({
+      ...prev,
+      phases: prev.phases.includes(phaseValue)
+        ? prev.phases.filter(p => p !== phaseValue)
+        : [...prev.phases, phaseValue],
+    }))
+  }
   const [saving, setSaving] = useState(false)
 
   // Helper to update a single form field
@@ -425,6 +482,43 @@ function DrillFormModal({ drill, tags, onSave, onClose, onDelete }) {
                 }
               }}
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Training Phases</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {PHASES.map(p => {
+                const checked = form.phases.includes(p.value)
+                return (
+                  <label
+                    key={p.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 10px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${checked ? p.color : 'var(--color-border)'}`,
+                      background: checked ? p.color + '12' : 'transparent',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      fontSize: 13,
+                      fontWeight: checked ? 600 : 400,
+                      color: checked ? p.color : 'var(--color-text-secondary)',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => togglePhase(p.value)}
+                      style={{ display: 'none' }}
+                    />
+                    {p.label}
+                  </label>
+                )
+              })}
+            </div>
           </div>
         </div>
 

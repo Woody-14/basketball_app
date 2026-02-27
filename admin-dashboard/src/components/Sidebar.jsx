@@ -10,12 +10,14 @@
 import { Link } from 'react-router-dom'
 import {
   LayoutDashboard, Dumbbell, ClipboardList,
-  Users, LogOut, Settings, MessageSquare, Video
+  Users, LogOut, Settings, MessageSquare, Video, BarChart2, FileText
 } from 'lucide-react'
 
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/analytics', label: 'Analytics', icon: BarChart2 },
+  { path: '/content', label: 'Content', icon: FileText },
   { path: '/messages', label: 'Messages', icon: MessageSquare },
   { path: '/video-review', label: 'Video Review', icon: Video },
   { path: '/drills', label: 'Drill Library', icon: Dumbbell },

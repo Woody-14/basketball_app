@@ -430,19 +430,19 @@ admin-dashboard/
 - ✅ Data models: Users, Drills, Workouts, Assignments, Completions, Badges, Skill Assessments
 - ✅ Authentication (JWT + bcrypt, role-based: coach vs student)
 - ✅ Admin dashboard: login, dashboard overview, drill library (CRUD + search/filter), workout builder, student roster, workout assignment
-- ✅ **Video upload** — replace URL field with actual S3 file upload for drill demo videos
-- ✅ **Student mobile app** (React Native + Expo) — students view/complete assigned workouts
+- ✅ Video upload — replace URL field with actual S3 file upload for drill demo videos
+- ✅ Student mobile app (React Native + Expo) — students view/complete assigned workouts
 - ✅ Basic messaging between coach and student
 - ✅ Workout completion tracking (student marks drills done)
-- ⬜ Simple badge/streak auto-awarding
+- ✅ Simple badge/streak auto-awarding
 
 ### Phase 2: Core Experience
-- ⬜ Video submission and form check feedback loop (student records themselves → coach reviews)
-- ⬜ Multiple subscription tiers enforced in the app
-- ⬜ Skill assessment and radar chart
-- ⬜ Parent view (read-only portal)
-- ⬜ Push notifications
-- ⬜ Improved gamification (more badges, XP, levels)
+- ✅ Video submission and form check feedback loop (student records themselves → coach reviews)
+- ✅ Multiple subscription tiers enforced in the app
+- ✅ Skill assessment and radar chart
+- ✅ Parent view (read-only portal)
+- ✅ Push notifications
+- ✅ Improved gamification (more badges, XP, levels)
 
 ### Phase 3: Polish & Growth
 - ⬜ Offline mode
@@ -451,6 +451,7 @@ admin-dashboard/
 - ⬜ Content feed / Drill of the Week
 - ⬜ Seasonal programming / phases
 - ⬜ Export progress reports
+- ⬜ Emoji character that you can dress and personalize
 
 ### Phase 4: Scale (If Applicable)
 - ⬜ Multi-coach support
@@ -458,13 +459,5 @@ admin-dashboard/
 - ⬜ Marketplace features
 - ⬜ Payment automation at scale (Stripe)
 
-### Recommended Next Steps (for next session)
-1. **Video upload for drills** — get real video into the drill library
-2. **Student mobile app** — React Native, so students can see and complete workouts
-3. **Workout completion flow** — students mark drills done, submit form check videos
-4. **Messaging** — in-app coach-student communication
-5. **Badges & streaks** — auto-award based on completions
-
 ---
-
 *End of context document. Feed this to Claude at the start of any future conversation about this project.*

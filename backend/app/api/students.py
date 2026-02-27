@@ -6,7 +6,7 @@ GET    /api/students/{id}       — Get detailed student profile (admin view)
 PUT    /api/students/{id}       — Update student info
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,7 +33,7 @@ async def list_students(
     result = await db.execute(
         select(User)
         .options(selectinload(User.badges).selectinload(UserBadge.badge))
-        .where(User.role == UserRole.STUDENT)
+        .where(User.role == UserRole.STUDENT, User.is_active == True)
         .order_by(User.last_name, User.first_name)
     )
     students = result.scalars().all()
@@ -118,3 +118,24 @@ async def update_student(
     await db.flush()
     await db.refresh(student)
     return StudentAdminView.model_validate(student)
+
+
+@router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_student(
+    student_id: int,
+    coach: User = Depends(require_coach),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Deactivate a student account. The student will no longer appear in the roster
+    or be able to log in. Their history is preserved.
+    """
+    result = await db.execute(
+        select(User).where(User.id == student_id, User.role == UserRole.STUDENT)
+    )
+    student = result.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    student.is_active = False
+    await db.flush()

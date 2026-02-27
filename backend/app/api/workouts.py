@@ -32,8 +32,11 @@ from app.schemas.workout import (
     WorkoutCreate, WorkoutUpdate, WorkoutResponse, WorkoutListResponse,
     AssignmentCreate, BulkAssignmentCreate, AssignmentResponse,
 )
+from app.schemas.user import WorkoutCompleteResponse, BadgeResponse
 from app.services.auth import get_current_user, require_coach
 from app.services.badges import evaluate_badges
+from app.services.push import notify_user
+from app.services.xp import calculate_xp_earned, calculate_level
 
 router = APIRouter(tags=["Workouts & Assignments"])
 
@@ -259,7 +262,16 @@ async def create_assignment(
         )
         .where(WorkoutAssignment.id == assignment.id)
     )
-    return result.scalar_one()
+    loaded = result.scalar_one()
+
+    await notify_user(
+        data.student_id,
+        "New Workout",
+        f"{loaded.workout.name} assigned for {data.assigned_date}",
+        db,
+    )
+
+    return loaded
 
 
 @router.post("/api/assignments/bulk", response_model=list[AssignmentResponse], status_code=status.HTTP_201_CREATED)
@@ -295,6 +307,13 @@ async def create_bulk_assignments(
             .where(WorkoutAssignment.id == assignment.id)
         )
         assignments.append(result.scalar_one())
+
+    await notify_user(
+        data.student_id,
+        "Workouts Assigned",
+        f"{len(data.dates)} workouts added to your schedule",
+        db,
+    )
 
     return assignments
 
@@ -335,7 +354,7 @@ async def get_my_assignments(
     return result.scalars().unique().all()
 
 
-@router.patch("/api/assignments/{assignment_id}/complete", response_model=AssignmentResponse)
+@router.patch("/api/assignments/{assignment_id}/complete", response_model=WorkoutCompleteResponse)
 async def complete_assignment(
     assignment_id: int,
     current_user: User = Depends(get_current_user),
@@ -344,12 +363,6 @@ async def complete_assignment(
     """Mark a workout assignment as completed by the student."""
     result = await db.execute(
         select(WorkoutAssignment)
-        .options(
-            selectinload(WorkoutAssignment.workout)
-            .selectinload(Workout.drills)
-            .selectinload(WorkoutDrill.drill)
-            .selectinload(Drill.tags)
-        )
         .where(WorkoutAssignment.id == assignment_id)
     )
     assignment = result.scalar_one_or_none()
@@ -364,6 +377,11 @@ async def complete_assignment(
     # Update the student's streak
     student_result = await db.execute(select(User).where(User.id == current_user.id))
     student = student_result.scalar_one_or_none()
+
+    xp_gained = 0
+    new_badges: list = []
+    leveled_up = False
+
     if student:
         student.current_streak = (student.current_streak or 0) + 1
         if student.current_streak > (student.longest_streak or 0):
@@ -371,22 +389,36 @@ async def complete_assignment(
 
         await db.flush()
 
-        # Evaluate and award badges
-        await evaluate_badges(student, db)
+        # Evaluate and award badges; notify for each newly earned one
+        new_badges = await evaluate_badges(student, db)
+        for badge in new_badges:
+            await notify_user(student.id, "Badge Earned!", f"You earned the {badge.name} badge", db)
+
+        # Award XP
+        xp_gained = calculate_xp_earned(student.current_streak, len(new_badges))
+        old_level = student.level or 1
+        student.xp = (student.xp or 0) + xp_gained
+        student.level = calculate_level(student.xp)
+        leveled_up = student.level > old_level
 
     await db.flush()
 
-    result = await db.execute(
-        select(WorkoutAssignment)
-        .options(
-            selectinload(WorkoutAssignment.workout)
-            .selectinload(Workout.drills)
-            .selectinload(WorkoutDrill.drill)
-            .selectinload(Drill.tags)
-        )
-        .where(WorkoutAssignment.id == assignment_id)
+    return WorkoutCompleteResponse(
+        xp_earned=xp_gained,
+        new_level=student.level if leveled_up else None,
+        new_badges=[
+            BadgeResponse(
+                id=b.id,
+                name=b.name,
+                description=b.description,
+                badge_type=b.badge_type,
+                threshold_value=b.threshold_value,
+                icon_url=b.icon_url,
+                earned_at=None,
+            )
+            for b in new_badges
+        ],
     )
-    return result.scalar_one()
 
 
 @router.get("/api/assignments/student/{student_id}", response_model=list[AssignmentResponse])

@@ -112,3 +112,13 @@ def require_coach(current_user: User = Depends(get_current_user)) -> User:
             detail="This action requires coach privileges",
         )
     return current_user
+
+
+def require_parent(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency that ensures the current user is a parent (read-only portal)."""
+    if current_user.role != UserRole.PARENT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action requires parent access",
+        )
+    return current_user

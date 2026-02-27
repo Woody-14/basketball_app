@@ -14,10 +14,12 @@ import { ActivityIndicator, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { AuthStack, AppStack } from './src/navigation';
 import { COLORS } from './src/constants/theme';
+import { useNotifications } from './src/hooks/useNotifications';
 
 
 function RootNavigator() {
   const { isAuthenticated, loading } = useAuth();
+  useNotifications(isAuthenticated);
 
   // Show a loading spinner while checking if the user has a stored token
   if (loading) {

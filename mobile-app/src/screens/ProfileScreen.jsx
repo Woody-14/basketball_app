@@ -2,10 +2,10 @@
  * ProfileScreen — Student's profile, badges, and settings.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert,
+  StyleSheet, Alert, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS } from '../constants/theme';
@@ -14,6 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function ProfileScreen({ navigation }) {
   const { user, signOut } = useAuth();
+  const [selectedBadge, setSelectedBadge] = useState(null);
 
   function handleLogout() {
     Alert.alert(
@@ -26,16 +27,30 @@ export default function ProfileScreen({ navigation }) {
     );
   }
 
-  // Merge user's earned badges with the static list to show what's locked/unlocked
+  // Level info — must match backend xp.py thresholds
+  const LEVEL_NAMES = {
+    1: 'Rookie', 2: 'Rising Star', 3: 'Starter',
+    4: 'Varsity', 5: 'All-Star', 6: 'Pro', 7: 'Legend',
+  };
+  const userLevel = user?.level || 1;
+  const userLevelName = LEVEL_NAMES[userLevel] || 'Rookie';
+
+  // Merge user's earned badges with the full badge list to show locked/unlocked
   const earnedBadgeNames = new Set((user?.badges || []).map(b => b.name));
 
   const builtInBadges = [
-    { id: 1, name: 'First Workout', emoji: '🏀' },
-    { id: 2, name: '7-Day Streak', emoji: '🔥' },
-    { id: 3, name: '10 Workouts', emoji: '💪' },
-    { id: 4, name: 'Perfect Week', emoji: '⭐' },
-    { id: 5, name: '30-Day Streak', emoji: '🏆' },
-    { id: 6, name: '50 Workouts', emoji: '🎯' },
+    { id: 1,  name: 'First Rep',        emoji: '🏀', description: 'Complete your very first workout.' },
+    { id: 2,  name: '5 Strong',         emoji: '💪', description: 'Complete 5 total workouts.' },
+    { id: 3,  name: '10 Workouts',      emoji: '✅', description: 'Complete 10 total workouts.' },
+    { id: 4,  name: '25 Workouts',      emoji: '🎯', description: 'Complete 25 total workouts.' },
+    { id: 5,  name: '50 Workouts',      emoji: '🔥', description: 'Complete 50 total workouts.' },
+    { id: 6,  name: 'Century Club',     emoji: '💯', description: 'Complete 100 total workouts.' },
+    { id: 7,  name: 'Hat Trick',        emoji: '🎩', description: 'Complete workouts 3 days in a row.' },
+    { id: 8,  name: 'Weekly Warrior',   emoji: '⚡', description: 'Maintain a 7-day workout streak.' },
+    { id: 9,  name: 'Two Weeks Strong', emoji: '💎', description: 'Maintain a 14-day workout streak.' },
+    { id: 10, name: 'Monthly Grind',    emoji: '🏆', description: 'Maintain a 30-day workout streak.' },
+    { id: 11, name: '60-Day Elite',     emoji: '👑', description: 'Maintain a 60-day workout streak.' },
+    { id: 12, name: 'Perfect Week',     emoji: '⭐', description: 'Complete every assigned workout in a week (minimum 3 workouts).' },
   ];
 
   const badges = builtInBadges.map(b => ({
@@ -48,6 +63,40 @@ export default function ProfileScreen({ navigation }) {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
+
+      {/* Badge Detail Modal */}
+      <Modal
+        visible={selectedBadge !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedBadge(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setSelectedBadge(null)}
+        >
+          <TouchableOpacity style={styles.modalCard} activeOpacity={1}>
+            <Text style={styles.modalEmoji}>{selectedBadge?.emoji}</Text>
+            <Text style={styles.modalBadgeName}>{selectedBadge?.name}</Text>
+            {selectedBadge?.earned ? (
+              <View style={styles.modalEarnedBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
+                <Text style={styles.modalEarnedText}>Earned</Text>
+              </View>
+            ) : (
+              <View style={styles.modalLockedBadge}>
+                <Ionicons name="lock-closed" size={14} color={COLORS.textLight} />
+                <Text style={styles.modalLockedText}>Locked</Text>
+              </View>
+            )}
+            <Text style={styles.modalDescription}>{selectedBadge?.description}</Text>
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setSelectedBadge(null)}>
+              <Text style={styles.modalCloseBtnText}>Got it</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Player Card */}
@@ -71,6 +120,40 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.schoolText}>{user.school}</Text>
           )}
 
+          {/* Level badge */}
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelEmoji}>⭐</Text>
+            <Text style={styles.levelText}>Level {userLevel} · {userLevelName}</Text>
+            {user?.xp != null && (
+              <Text style={styles.levelXp}>{(user.xp).toLocaleString()} XP</Text>
+            )}
+          </View>
+
+          {/* Tier badge */}
+          {(() => {
+            const tier = user?.subscription_tier;
+            const isElite = tier === 'elite';
+            const label = isElite ? 'Elite' : 'Training';
+            const desc = isElite
+              ? '4–5 workouts/week · 2× monthly sessions'
+              : '2–3 workouts/week · Monthly private session';
+            return (
+              <View style={[styles.tierBadge, isElite ? styles.tierBadgeElite : styles.tierBadgeTraining]}>
+                <Ionicons
+                  name={isElite ? 'trophy' : 'barbell'}
+                  size={14}
+                  color={isElite ? '#D97706' : COLORS.accent}
+                />
+                <View>
+                  <Text style={[styles.tierLabel, isElite ? styles.tierLabelElite : styles.tierLabelTraining]}>
+                    {label} Plan
+                  </Text>
+                  <Text style={styles.tierDesc}>{desc}</Text>
+                </View>
+              </View>
+            );
+          })()}
+
           {/* Quick stats */}
           <View style={styles.quickStats}>
             <View style={styles.quickStat}>
@@ -79,8 +162,8 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <View style={styles.quickStatDivider} />
             <View style={styles.quickStat}>
-              <Text style={styles.quickStatValue}>{user?.subscription_tier || 'base'}</Text>
-              <Text style={styles.quickStatLabel}>Tier</Text>
+              <Text style={styles.quickStatValue}>{user?.longest_streak || 0}</Text>
+              <Text style={styles.quickStatLabel}>Best</Text>
             </View>
             <View style={styles.quickStatDivider} />
             <View style={styles.quickStat}>
@@ -95,9 +178,11 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>BADGES</Text>
           <View style={styles.badgesGrid}>
             {badges.map(badge => (
-              <View
+              <TouchableOpacity
                 key={badge.id}
                 style={[styles.badgeItem, !badge.earned && styles.badgeLocked]}
+                onPress={() => setSelectedBadge(badge)}
+                activeOpacity={0.7}
               >
                 <Text style={[styles.badgeEmoji, !badge.earned && styles.badgeEmojiLocked]}>
                   {badge.emoji}
@@ -108,7 +193,7 @@ export default function ProfileScreen({ navigation }) {
                 {!badge.earned && (
                   <Ionicons name="lock-closed" size={12} color={COLORS.textLight} style={styles.lockIcon} />
                 )}
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -134,6 +219,17 @@ export default function ProfileScreen({ navigation }) {
             >
               <Ionicons name="videocam-outline" size={22} color={COLORS.text} />
               <Text style={styles.menuItemText}>Form Checks</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('ChangePassword')}
+            >
+              <Ionicons name="lock-closed-outline" size={22} color={COLORS.text} />
+              <Text style={styles.menuItemText}>Change Password</Text>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
             </TouchableOpacity>
 
@@ -259,6 +355,64 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: COLORS.borderLight,
   },
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: 'rgba(139,92,246,0.1)',
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    marginTop: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.25)',
+  },
+  levelEmoji: {
+    fontSize: 14,
+  },
+  levelText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '700',
+    color: '#C4B5FD',
+  },
+  levelXp: {
+    fontSize: FONTS.sizes.xs,
+    color: 'rgba(196,181,253,0.7)',
+    marginLeft: 2,
+  },
+  tierBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginTop: SPACING.md,
+    borderWidth: 1,
+  },
+  tierBadgeTraining: {
+    backgroundColor: COLORS.accentLight,
+    borderColor: 'rgba(255,92,22,0.2)',
+  },
+  tierBadgeElite: {
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderColor: 'rgba(245,158,11,0.25)',
+  },
+  tierLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '700',
+  },
+  tierLabelTraining: {
+    color: COLORS.accent,
+  },
+  tierLabelElite: {
+    color: '#D97706',
+  },
+  tierDesc: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textSecondary,
+    marginTop: 1,
+  },
 
   // Badges
   section: { marginTop: SPACING.lg },
@@ -351,5 +505,82 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     textAlign: 'center',
     marginTop: SPACING.md,
+  },
+
+  // Badge modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  modalCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+    ...SHADOWS.md,
+  },
+  modalEmoji: {
+    fontSize: 56,
+    marginBottom: SPACING.md,
+  },
+  modalBadgeName: {
+    fontSize: FONTS.sizes.lg,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
+  },
+  modalEarnedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(34,197,94,0.1)',
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
+    marginBottom: SPACING.md,
+  },
+  modalEarnedText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.success,
+  },
+  modalLockedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
+    marginBottom: SPACING.md,
+  },
+  modalLockedText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.textLight,
+  },
+  modalDescription: {
+    fontSize: FONTS.sizes.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: SPACING.xl,
+  },
+  modalCloseBtn: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm,
+  },
+  modalCloseBtnText: {
+    fontSize: FONTS.sizes.body,
+    fontWeight: '700',
+    color: '#FFF',
   },
 });

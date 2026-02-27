@@ -24,6 +24,7 @@ from app.models.user import User, UserRole
 from app.models.message import Message
 from app.schemas.message import MessageCreate, MessageResponse
 from app.services.auth import get_current_user
+from app.services.push import notify_user
 
 router = APIRouter(prefix="/api/messages", tags=["Messages"])
 
@@ -123,6 +124,14 @@ async def send_message(
     )
     db.add(message)
     await db.flush()
+
+    # Notify the recipient (fire-and-forget — never blocks the response)
+    await notify_user(
+        recipient_id,
+        "New Message",
+        f"{current_user.first_name}: {data.content.strip()[:60]}",
+        db,
+    )
 
     # Reload with relationships so the response includes sender info
     result = await db.execute(

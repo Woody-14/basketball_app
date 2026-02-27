@@ -12,8 +12,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS } from '../constants/theme';
-import { getMyAssignments } from '../services/api';
+import { getMyAssignments, getMySkillAssessment } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import RadarChart from '../components/RadarChart';
 
 
 // Get last N days as date strings
@@ -31,6 +32,7 @@ function getLastNDays(n) {
 export default function ProgressScreen() {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
+  const [skillAssessment, setSkillAssessment] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -45,8 +47,14 @@ export default function ProgressScreen() {
       const start = new Date();
       start.setDate(start.getDate() - 60);
       const startDate = start.toISOString().split('T')[0];
-      const data = await getMyAssignments(startDate, endDate);
-      setAssignments(Array.isArray(data) ? data : []);
+
+      const [assignmentsData, skillData] = await Promise.all([
+        getMyAssignments(startDate, endDate),
+        getMySkillAssessment().catch(() => null),
+      ]);
+
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : []);
+      setSkillAssessment(skillData || null);
     } catch (err) {
       console.error('Failed to load progress:', err);
       setAssignments([]);
@@ -72,19 +80,23 @@ export default function ProgressScreen() {
     assignments.map(a => a.assigned_date)
   );
 
-  // Calculate current streak
+  // Calculate current streak.
+  // If today's workout is assigned but not yet done, start counting from yesterday
+  // so a pending workout doesn't wipe out an existing streak.
   let streak = 0;
   const today = new Date().toISOString().split('T')[0];
-  for (let i = 0; i <= 60; i++) {
+  const todayPending = assignedDates.has(today) && !completedDates.has(today);
+  const startOffset = todayPending ? 1 : 0;
+  for (let i = startOffset; i <= 60; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
     if (completedDates.has(dateStr)) {
       streak++;
     } else if (assignedDates.has(dateStr)) {
-      break; // Had a workout but didn't complete it
+      break; // Had a workout but didn't complete it — streak ends
     }
-    // Days with no assignment don't break the streak
+    // Days with no assignment are rest days — don't break the streak
   }
 
   return (
@@ -99,14 +111,14 @@ export default function ProgressScreen() {
           <View style={styles.streakCircle}>
             <Ionicons name="flame" size={36} color={COLORS.accent} />
           </View>
-          <Text style={styles.streakValue}>{streak}</Text>
+          <Text style={styles.streakValue}>{user?.current_streak ?? streak}</Text>
           <Text style={styles.streakLabel}>Day Streak</Text>
           <Text style={styles.streakMotivation}>
-            {streak === 0
+            {(user?.current_streak ?? streak) === 0
               ? 'Complete today\'s workout to start your streak!'
-              : streak < 7
+              : (user?.current_streak ?? streak) < 7
                 ? 'Keep it going! Build that habit.'
-                : streak < 30
+                : (user?.current_streak ?? streak) < 30
                   ? 'You\'re on fire! 🔥'
                   : 'Incredible dedication! 🏆'}
           </Text>
@@ -120,12 +132,41 @@ export default function ProgressScreen() {
           </View>
           <View style={styles.statCard}>
             <Text style={[styles.statValue, { color: COLORS.success }]}>{complianceRate}%</Text>
-            <Text style={styles.statLabel}>Compliance{'\n'}Rate</Text>
+            <Text style={styles.statLabel}>Completion{'\n'}Rate</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{totalAssigned}</Text>
             <Text style={styles.statLabel}>Workouts{'\n'}Assigned</Text>
           </View>
+        </View>
+
+        {/* Skill Radar Chart */}
+        <View style={styles.skillsCard}>
+          <Text style={styles.sectionTitle}>SKILL ASSESSMENT</Text>
+          {skillAssessment ? (
+            <>
+              <RadarChart data={skillAssessment} size={280} />
+              <Text style={styles.assessmentDate}>
+                Last assessed: {new Date(skillAssessment.assessed_at).toLocaleDateString('en-US', {
+                  month: 'long', day: 'numeric', year: 'numeric'
+                })}
+              </Text>
+              {skillAssessment.notes ? (
+                <View style={styles.assessmentNotes}>
+                  <Ionicons name="chatbubble-outline" size={13} color={COLORS.accent} />
+                  <Text style={styles.assessmentNotesText}>{skillAssessment.notes}</Text>
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <View style={styles.noSkillState}>
+              <Ionicons name="analytics-outline" size={36} color={COLORS.textLight} />
+              <Text style={styles.noSkillText}>No skill assessment yet</Text>
+              <Text style={styles.noSkillSubtext}>
+                Ask your coach to rate your skills during your next session.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Activity Heatmap (last 28 days) */}
@@ -403,5 +444,52 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
     textAlign: 'center',
+  },
+
+  // Skills radar
+  skillsCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginTop: SPACING.lg,
+    alignItems: 'center',
+    ...SHADOWS.sm,
+  },
+  assessmentDate: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+  },
+  assessmentNotes: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    alignSelf: 'stretch',
+  },
+  assessmentNotesText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.text,
+    flex: 1,
+    lineHeight: 20,
+  },
+  noSkillState: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  noSkillText: {
+    fontSize: FONTS.sizes.body,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  noSkillSubtext: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

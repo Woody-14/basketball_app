@@ -18,10 +18,10 @@ import LoginScreen from '../screens/LoginScreen';
 
 // Main tab screens
 import HomeScreen from '../screens/HomeScreen';
-import ScheduleScreen from '../screens/ScheduleScreen';
-import DrillLibraryScreen from '../screens/DrillLibraryScreen';
 import ProgressScreen from '../screens/ProgressScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import DrillLibraryScreen from '../screens/DrillLibraryScreen';
+import FeedScreen from '../screens/FeedScreen';
 
 // Sub-screens (pushed on top of tabs)
 import WorkoutDetailScreen from '../screens/WorkoutDetailScreen';
@@ -30,6 +30,7 @@ import DrillDetailScreen from '../screens/DrillDetailScreen';
 import WorkoutCompleteScreen from '../screens/WorkoutCompleteScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import FormChecksScreen from '../screens/FormChecksScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -61,8 +62,11 @@ function MainTabs() {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'Schedule':
-              iconName = focused ? 'calendar' : 'calendar-outline';
+            case 'Feed':
+              iconName = focused ? 'newspaper' : 'newspaper-outline';
+              break;
+            case 'Drills':
+              iconName = focused ? 'barbell' : 'barbell-outline';
               break;
             case 'Progress':
               iconName = focused ? 'stats-chart' : 'stats-chart-outline';
@@ -76,7 +80,8 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Schedule" component={ScheduleScreen} />
+      <Tab.Screen name="Feed" component={FeedScreen} />
+      <Tab.Screen name="Drills" component={DrillLibraryScreen} />
       <Tab.Screen name="Progress" component={ProgressScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
@@ -150,6 +155,11 @@ export function AppStack() {
         name="FormChecks"
         component={FormChecksScreen}
         options={{ title: 'Form Checks' }}
+      />
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{ title: 'Change Password' }}
       />
     </Stack.Navigator>
   );

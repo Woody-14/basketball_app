@@ -5,7 +5,7 @@
  * watch the coach's demo video. This is a reference/learning tool.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   TextInput, StyleSheet, ActivityIndicator, FlatList,
@@ -13,26 +13,119 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS, CATEGORY_LABELS, DIFFICULTY_COLORS } from '../constants/theme';
 import { getDrills } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 
+
+// Shown to Training-tier students who don't have drill library access
+function TierLockedView() {
+  return (
+    <View style={lockedStyles.container}>
+      <View style={lockedStyles.iconWrap}>
+        <Ionicons name="barbell-outline" size={40} color={COLORS.accent} />
+      </View>
+      <Text style={lockedStyles.title}>Elite Plan Feature</Text>
+      <Text style={lockedStyles.body}>
+        The full drill library is available on the Elite plan. Your coach assigns
+        personalized drills tailored specifically to your development.
+      </Text>
+      <View style={lockedStyles.card}>
+        <Text style={lockedStyles.cardTitle}>YOUR TRAINING PLAN INCLUDES</Text>
+        {[
+          'Personalized assigned workouts (2–3/week)',
+          'Video form checks with coach feedback',
+          'In-app messaging with your coach',
+          'Streak tracking and achievement badges',
+          'Monthly 1-on-1 private training session',
+        ].map(item => (
+          <View key={item} style={lockedStyles.checkRow}>
+            <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+            <Text style={lockedStyles.checkText}>{item}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={lockedStyles.upgradeHint}>
+        Ask your coach about upgrading to Elite for 4–5 workouts/week,
+        custom drills, and twice-monthly sessions.
+      </Text>
+    </View>
+  );
+}
+
+const lockedStyles = StyleSheet.create({
+  container: {
+    flex: 1, backgroundColor: COLORS.bg, padding: SPACING.xl,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  iconWrap: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: COLORS.accentLight,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: SPACING.lg,
+  },
+  title: {
+    fontSize: FONTS.sizes.xl, fontWeight: '800', color: COLORS.text,
+    textAlign: 'center', marginBottom: SPACING.sm,
+  },
+  body: {
+    fontSize: FONTS.sizes.body, color: COLORS.textSecondary,
+    textAlign: 'center', lineHeight: 22, marginBottom: SPACING.xl,
+  },
+  card: {
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
+    padding: SPACING.lg, width: '100%', ...SHADOWS.sm,
+    marginBottom: SPACING.lg,
+  },
+  cardTitle: {
+    fontSize: FONTS.sizes.xs, fontWeight: '700', color: COLORS.textLight,
+    letterSpacing: 1, marginBottom: SPACING.md,
+  },
+  checkRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: SPACING.sm, marginBottom: SPACING.sm,
+  },
+  checkText: {
+    flex: 1, fontSize: FONTS.sizes.sm, color: COLORS.text, lineHeight: 20,
+  },
+  upgradeHint: {
+    fontSize: FONTS.sizes.sm, color: COLORS.textLight,
+    textAlign: 'center', lineHeight: 20,
+  },
+});
+
+
+const PHASE_META = {
+  foundation:        { label: 'Foundation',        color: '#7C3AED' },
+  skill_development: { label: 'Skill Development', color: '#2563EB' },
+  pre_season:        { label: 'Pre-Season',         color: '#D97706' },
+  in_season:         { label: 'In-Season',          color: '#16A34A' },
+  post_season:       { label: 'Post-Season',        color: '#6B7280' },
+};
 
 export default function DrillLibraryScreen({ navigation }) {
+  const { user } = useAuth();
+  const isElite = user?.subscription_tier === 'elite';
   const [drills, setDrills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [phaseFiltered, setPhaseFiltered] = useState(true);
 
-  useEffect(() => { loadDrills(); }, []);
-
-  async function loadDrills() {
+  const loadDrills = useCallback(async () => {
     try {
-      const data = await getDrills();
+      const filters = {};
+      if (phaseFiltered && user?.training_phase) {
+        filters.phase = user.training_phase;
+      }
+      const data = await getDrills(filters);
       setDrills(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load drills:', err);
     } finally {
       setLoading(false);
     }
-  }
+  }, [phaseFiltered, user?.training_phase]);
+
+  useEffect(() => { loadDrills(); }, [loadDrills]);
 
   // Filter drills
   const filtered = drills.filter(drill => {
@@ -84,6 +177,11 @@ export default function DrillLibraryScreen({ navigation }) {
     );
   }
 
+  // Training-tier students see the locked screen
+  if (!isElite) {
+    return <TierLockedView />;
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -109,6 +207,24 @@ export default function DrillLibraryScreen({ navigation }) {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Phase filter toggle — only shown when student has a phase */}
+        {user?.training_phase && (() => {
+          const meta = PHASE_META[user.training_phase];
+          return (
+            <View style={styles.phaseToggleRow}>
+              <View style={[styles.phaseDot, { backgroundColor: meta?.color || COLORS.accent }]} />
+              <Text style={styles.phaseToggleLabel}>
+                {phaseFiltered ? (meta?.label || 'Phase') + ' Drills' : 'All Drills'}
+              </Text>
+              <TouchableOpacity onPress={() => setPhaseFiltered(v => !v)}>
+                <Text style={styles.phaseToggleLink}>
+                  {phaseFiltered ? 'Show all' : 'Phase only'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })()}
 
         {/* Category filter chips */}
         <ScrollView
@@ -213,6 +329,29 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONTS.sizes.body,
     color: COLORS.text,
+  },
+  phaseToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginTop: SPACING.md,
+    marginBottom: 2,
+  },
+  phaseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  phaseToggleLabel: {
+    flex: 1,
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  phaseToggleLink: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: '600',
+    color: COLORS.accent,
   },
   chipScroll: {
     marginTop: SPACING.md,

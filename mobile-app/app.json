@@ -35,7 +35,15 @@
         }
       ],
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#FF5C16",
+          "sounds": []
+        }
+      ]
     ]
   }
 }

@@ -4,7 +4,8 @@
       "Bash(dir:*)",
       "Bash(python3:*)",
       "Bash(node -e:*)",
-      "Bash(venv/Scripts/python.exe:*)"
+      "Bash(venv/Scripts/python.exe:*)",
+      "Bash(python:*)"
     ]
   }
 }

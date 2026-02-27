@@ -12,6 +12,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 from app.models.user import UserRole, SubscriptionTier
 from app.models.progress import BadgeType
+from app.models.phase import TrainingPhase
 
 # ---------- BADGES ----------
 
@@ -56,6 +57,16 @@ class UserCreate(BaseModel):
     parent_id: Optional[int] = None
 
 
+# ---------- PARENT CREATION (Coach creates parent accounts) ----------
+
+class ParentCreate(BaseModel):
+    email: str
+    password: str
+    first_name: str
+    last_name: str
+    student_id: int   # The student to link this parent to
+
+
 # ---------- USER RESPONSES ----------
 
 class UserBasic(BaseModel):
@@ -85,6 +96,9 @@ class UserProfile(BaseModel):
     last_login: Optional[datetime] = None
     current_streak: int = 0
     longest_streak: int = 0
+    xp: int = 0
+    level: int = 1
+    training_phase: Optional[TrainingPhase] = None
     badges: list[BadgeResponse] = []
 
     @field_validator('badges', mode='before')
@@ -138,3 +152,13 @@ class UserUpdate(BaseModel):
     subscription_tier: Optional[SubscriptionTier] = None
     coach_notes: Optional[str] = None
     is_active: Optional[bool] = None
+    training_phase: Optional[TrainingPhase] = None
+
+
+class WorkoutCompleteResponse(BaseModel):
+    """Returned by PATCH /api/assignments/{id}/complete."""
+    xp_earned: int
+    new_level: Optional[int] = None   # Set only if the student leveled up, else None
+    new_badges: list[BadgeResponse] = []
+
+    model_config = {"from_attributes": True}
