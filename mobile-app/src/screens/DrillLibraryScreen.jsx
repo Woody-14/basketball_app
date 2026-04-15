@@ -103,7 +103,6 @@ const PHASE_META = {
 
 export default function DrillLibraryScreen({ navigation }) {
   const { user } = useAuth();
-  const isElite = user?.subscription_tier === 'elite';
   const [drills, setDrills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -177,17 +176,14 @@ export default function DrillLibraryScreen({ navigation }) {
     );
   }
 
-  // Training-tier students see the locked screen
-  if (!isElite) {
-    return <TierLockedView />;
-  }
-
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <Text style={styles.headerEyebrow}>DRILL LIBRARY</Text>
         <Text style={styles.headerTitle}>Drill Library</Text>
         <Text style={styles.headerSubtitle}>{drills.length} drills available</Text>
+        <View style={styles.headerAccentBar} />
       </View>
 
       {/* Search */}
@@ -294,18 +290,40 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: 60,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accent,
+    letterSpacing: 2,
+    marginBottom: 3,
+    textTransform: 'uppercase',
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: COLORS.text,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: FONTS.sizes.sm,
     color: COLORS.textSecondary,
     marginTop: 2,
+    fontWeight: '500',
+  },
+  headerAccentBar: {
+    width: 32,
+    height: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: 2,
+    marginTop: 8,
   },
 
   // Search

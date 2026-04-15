@@ -52,7 +52,6 @@ function formatCategory(cat) {
 
 function PinnedDrillCard({ post }) {
   const drill = post.drill;
-  const remaining = daysRemaining(post.scheduled_for);
 
   return (
     <View style={styles.pinnedCard}>
@@ -61,12 +60,6 @@ function PinnedDrillCard({ post }) {
         <View style={styles.pinnedBadge}>
           <Ionicons name="pin" size={11} color="#fff" />
           <Text style={styles.pinnedBadgeText}>DRILL OF THE WEEK</Text>
-        </View>
-        <View style={styles.expiryPill}>
-          <Ionicons name="time-outline" size={11} color={remaining <= 2 ? COLORS.danger : COLORS.textSecondary} />
-          <Text style={[styles.expiryText, remaining <= 2 && { color: COLORS.danger }]}>
-            {remaining === 0 ? 'Expires today' : `${remaining}d left`}
-          </Text>
         </View>
       </View>
 
@@ -143,8 +136,10 @@ export default function FeedScreen() {
   const [feedItems, setFeedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   async function loadFeed() {
+    setError(null);
     try {
       const data = await getFeed();
       const posts = data || [];
@@ -160,6 +155,7 @@ export default function FeedScreen() {
       }
     } catch (err) {
       console.log('FeedScreen load error:', err.message);
+      setError('Could not load the feed. Pull down to retry.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -182,7 +178,9 @@ export default function FeedScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
+          <Text style={styles.headerEyebrow}>COACH UPDATES</Text>
           <Text style={styles.headerTitle}>Feed</Text>
+          <View style={styles.headerAccentBar} />
         </View>
         <View style={styles.centered}>
           <Text style={styles.loadingText}>Loading…</Text>
@@ -197,7 +195,9 @@ export default function FeedScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <Text style={styles.headerEyebrow}>COACH UPDATES</Text>
         <Text style={styles.headerTitle}>Feed</Text>
+        <View style={styles.headerAccentBar} />
       </View>
 
       <ScrollView
@@ -211,6 +211,14 @@ export default function FeedScreen() {
           />
         }
       >
+        {/* Error state */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="cloud-offline-outline" size={18} color={COLORS.danger} />
+            <Text style={styles.errorBannerText}>{error}</Text>
+          </View>
+        )}
+
         {/* Pinned Drill of the Week — always at top */}
         {pinnedDrill && (
           <PinnedDrillCard post={pinnedDrill} />
@@ -254,15 +262,34 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: 60,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accent,
+    letterSpacing: 2,
+    marginBottom: 3,
+    textTransform: 'uppercase',
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: COLORS.text,
+    letterSpacing: -0.5,
+  },
+  headerAccentBar: {
+    width: 32,
+    height: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: 2,
+    marginTop: 8,
   },
   scroll: {
     flex: 1,
@@ -276,6 +303,23 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: FONTS.sizes.body,
     color: COLORS.textSecondary,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.2)',
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.danger,
+    lineHeight: 18,
   },
   sectionLabel: {
     fontSize: FONTS.sizes.xs,

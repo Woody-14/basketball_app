@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     R2_BUCKET_NAME: str = "basketball-app-videos"
     
     # -- App --
-    APP_NAME: str = "Basketball Training App"
+    APP_NAME: str = "Summit Hoops"
     DEBUG: bool = False
 
     # -- Database --

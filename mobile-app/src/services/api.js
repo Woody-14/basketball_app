@@ -8,10 +8,30 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-// For Expo Go on same machine, use localhost
-// For physical device, use your computer's local IP
-const API_BASE = 'http://192.168.1.173:8000/api';
+// Derive the backend host from Expo's dev server host so the URL is always
+// correct — works on iOS simulator, physical device (LAN), and Android emulator.
+function getApiBase() {
+  if (__DEV__) {
+    // hostUri looks like "192.168.1.x:8081" — grab just the IP portion
+    const raw =
+      Constants.expoConfig?.hostUri ??
+      Constants.manifest2?.extra?.expoGo?.debuggerHost ??
+      Constants.manifest?.debuggerHost ??
+      '';
+    const host = raw.split(':')[0] || 'localhost';
+    const url = `http://${host}:8000/api`;
+    console.log('[API] base URL:', url);
+    return url;
+  }
+  // ⚠️  BEFORE SUBMITTING TO APP STORES:
+  // Replace this with your real backend URL, e.g. 'https://api.summithoops.com/api'
+  // The app will not work in production until this is set.
+  return 'https://YOUR_BACKEND_URL_HERE/api';
+}
+
+const API_BASE = getApiBase();
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
@@ -265,4 +285,8 @@ export async function changePassword(currentPassword, newPassword) {
     method: 'POST',
     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });
+}
+
+export async function deleteMyAccount() {
+  return request('/auth/me', { method: 'DELETE' });
 }

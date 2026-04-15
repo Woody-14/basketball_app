@@ -5,11 +5,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, Modal,
+  StyleSheet, Alert, Modal, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, FONTS, SHADOWS } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
+import { deleteMyAccount } from '../services/api';
 
 
 export default function ProfileScreen({ navigation }) {
@@ -23,6 +24,41 @@ export default function ProfileScreen({ navigation }) {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign Out', style: 'destructive', onPress: signOut },
+      ]
+    );
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently deactivate your account and remove your data. This cannot be undone.\n\nAre you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Final Confirmation',
+              'Your account will be deleted. You will be signed out immediately.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteMyAccount();
+                      await signOut();
+                    } catch (e) {
+                      Alert.alert('Error', 'Could not delete account. Please try again or contact support.');
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
       ]
     );
   }
@@ -61,7 +97,11 @@ export default function ProfileScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerEyebrow}>YOUR ACCOUNT</Text>
+        <Text style={styles.headerTitle}>
+          {user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Profile'}
+        </Text>
+        <View style={styles.headerAccentBar} />
       </View>
 
       {/* Badge Detail Modal */}
@@ -235,7 +275,10 @@ export default function ProfileScreen({ navigation }) {
 
             <View style={styles.menuDivider} />
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => Linking.openSettings()}
+            >
               <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
               <Text style={styles.menuItemText}>Notifications</Text>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
@@ -243,9 +286,23 @@ export default function ProfileScreen({ navigation }) {
 
             <View style={styles.menuDivider} />
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => Linking.openURL('mailto:summit.athletic.training@gmail.com')}
+            >
               <Ionicons name="help-circle-outline" size={22} color={COLORS.text} />
               <Text style={styles.menuItemText}>Help & Support</Text>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => Linking.openURL('https://woody-14.github.io/basketball_app/website/privacy-policy.html')}
+            >
+              <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.text} />
+              <Text style={styles.menuItemText}>Privacy Policy</Text>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
             </TouchableOpacity>
           </View>
@@ -257,7 +314,12 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>Basketball Training v0.1.0</Text>
+        {/* Delete Account */}
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Delete Account</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.versionText}>Summit Hoops v1.0.0</Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -271,15 +333,34 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: 60,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accent,
+    letterSpacing: 2,
+    marginBottom: 3,
+    textTransform: 'uppercase',
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: COLORS.text,
+    letterSpacing: -0.5,
+  },
+  headerAccentBar: {
+    width: 32,
+    height: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: 2,
+    marginTop: 8,
   },
   scroll: { flex: 1, paddingHorizontal: SPACING.lg },
 
@@ -480,6 +561,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: COLORS.text,
   },
+  menuItemLocked: {
+    color: COLORS.textLight,
+  },
+  lockBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.accentLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,92,22,0.2)',
+  },
   menuDivider: {
     height: 1,
     backgroundColor: COLORS.borderLight,
@@ -499,6 +593,16 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.body,
     fontWeight: '600',
     color: COLORS.danger,
+  },
+  deleteBtn: {
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
+  deleteText: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textLight,
+    textDecorationLine: 'underline',
   },
   versionText: {
     fontSize: FONTS.sizes.xs,

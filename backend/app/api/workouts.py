@@ -383,7 +383,29 @@ async def complete_assignment(
     leveled_up = False
 
     if student:
-        student.current_streak = (student.current_streak or 0) + 1
+        # Recalculate streak from scratch instead of blindly incrementing.
+        # Streak = consecutive completed workouts counting backwards from the
+        # most recent. Any missed assignment resets it to 0.
+        all_assignments_result = await db.execute(
+            select(WorkoutAssignment)
+            .where(WorkoutAssignment.student_id == student.id)
+            .order_by(WorkoutAssignment.assigned_date.desc())
+        )
+        all_assignments = all_assignments_result.scalars().all()
+
+        today = date.today()
+        # Exclude future assignments; also skip today if it's still pending
+        # (we just completed it above, so its status is now COMPLETED)
+        past = [a for a in all_assignments if a.assigned_date <= today]
+
+        new_streak = 0
+        for a in past:
+            if a.status == AssignmentStatus.COMPLETED:
+                new_streak += 1
+            else:
+                break  # First missed workout ends the streak
+
+        student.current_streak = new_streak
         if student.current_streak > (student.longest_streak or 0):
             student.longest_streak = student.current_streak
 

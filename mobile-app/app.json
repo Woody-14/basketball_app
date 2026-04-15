@@ -1,37 +1,50 @@
 {
   "expo": {
-    "name": "Basketball Training",
-    "slug": "basketball-training",
-    "version": "0.1.0",
+    "name": "Summit Hoops",
+    "slug": "summit-hoops",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
       "backgroundColor": "#1A1A2E"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.basketballtraining.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.summithoops.app",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": []
+      }
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A1A2E"
       },
-      "package": "com.basketballtraining.app"
+      "package": "com.summithoops.app",
+      "versionCode": 1
+    },
+    "extra": {
+      "privacyPolicyUrl": "https://woody-14.github.io/basketball_app/website/privacy-policy.html",
+      "supportEmail": "summit.athletic.training@gmail.com"
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Basketball Training to use your camera to record form check videos."
+          "cameraPermission": "Allow Summit Hoops to use your camera to record form check videos."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Basketball Training to access your photos to upload form check videos."
+          "photosPermission": "Allow Summit Hoops to access your photos to upload form check videos."
         }
       ],
       "expo-font",

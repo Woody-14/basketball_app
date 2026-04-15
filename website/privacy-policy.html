@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy | Summit Hoops</title>
+  <meta name="description" content="Privacy Policy for the Summit Hoops app." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #FF5C16;
+      --orange-dark: #E34A0B;
+      --orange-light: rgba(255, 92, 22, 0.12);
+      --dark: #080A12;
+      --dark-2: #0E1018;
+      --dark-3: #161923;
+      --dark-4: #1E2330;
+      --gray: #8E9BAE;
+      --gray-light: #C4CBDA;
+      --white: #FFFFFF;
+      --border: rgba(255,255,255,0.07);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark);
+      color: var(--white);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(8,10,18,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; max-width: 1140px; margin: 0 auto;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px; letter-spacing: 2px;
+      color: var(--white); text-decoration: none;
+    }
+    .nav-logo span { color: var(--orange); }
+    .nav-back {
+      font-size: 14px; font-weight: 500; color: var(--gray-light);
+      text-decoration: none; transition: color 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .nav-back:hover { color: var(--white); }
+
+    /* ─── CONTENT ─── */
+    .page-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+    }
+
+    .page-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--orange); background: var(--orange-light);
+      border: 1px solid rgba(255,92,22,0.25);
+      padding: 5px 12px; border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: clamp(36px, 6vw, 56px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: var(--gray);
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--white);
+      margin-top: 40px;
+      margin-bottom: 14px;
+    }
+
+    p {
+      color: var(--gray-light);
+      margin-bottom: 14px;
+      font-size: 15px;
+    }
+
+    ul {
+      list-style: none;
+      margin-bottom: 14px;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 20px;
+      color: var(--gray-light);
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 6px;
+      height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+    }
+
+    a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+
+    .contact-card {
+      background: var(--dark-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-top: 40px;
+    }
+    .contact-card h2 { margin-top: 0; }
+    .contact-card p { margin-bottom: 0; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--dark-2);
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      max-width: 1140px; margin: 0 auto; padding: 0 24px;
+    }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: 2px; color: var(--white); text-decoration: none;
+    }
+    .footer-logo span { color: var(--orange); }
+    .footer-copy { font-size: 13px; color: var(--gray); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--gray); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--white); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">SUMMIT<span>.</span>HOOPS</a>
+      <a href="/" class="nav-back">← Back to Home</a>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+    <span class="page-eyebrow">Legal</span>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated: March 31, 2026 &nbsp;·&nbsp; Effective: March 31, 2026</p>
+
+    <p>
+      Summit Hoops ("we," "us," or "our") operates the Summit Hoops mobile
+      application (the "App"). This Privacy Policy explains what information we collect, how we use
+      it, and your rights regarding that information. By using the App, you agree to the practices
+      described below.
+    </p>
+
+    <h2>1. Information We Collect</h2>
+    <p>We collect information you provide directly when you create an account or use the App:</p>
+    <ul>
+      <li><strong>Account information:</strong> first name, last name, email address, age, basketball position, and school/team name.</li>
+      <li><strong>Authentication credentials:</strong> hashed password; we never store your password in plain text.</li>
+      <li><strong>Subscription and billing data:</strong> your selected plan (Training or Elite) and payment processing details. Payments are handled by our third-party payment processor; we do not store full card numbers on our servers.</li>
+      <li><strong>Workout and progress data:</strong> completed workouts, workout streaks, XP points, level, badges earned, and performance metrics you log in the App.</li>
+      <li><strong>Video content:</strong> videos you voluntarily upload for form checks. These are stored securely and reviewed only by your assigned coach.</li>
+      <li><strong>Messages:</strong> communications you send through the in-app coach messaging feature.</li>
+      <li><strong>Device and usage data:</strong> device type, operating system version, IP address, app version, and general usage patterns (e.g., screens visited, features used) collected automatically to help us improve the App.</li>
+    </ul>
+
+    <h2>2. How We Use Your Information</h2>
+    <p>We use the information we collect to:</p>
+    <ul>
+      <li>Create and manage your account and authenticate your identity.</li>
+      <li>Deliver personalized workout plans and coaching tailored to your profile.</li>
+      <li>Process subscription payments and manage your billing relationship.</li>
+      <li>Enable coach–student communication and form-check video reviews.</li>
+      <li>Track your progress, award XP, and unlock badges.</li>
+      <li>Send you important account and service notifications (e.g., new workouts, schedule updates).</li>
+      <li>Diagnose technical issues, prevent fraud, and improve App stability and features.</li>
+      <li>Comply with applicable legal obligations.</li>
+    </ul>
+    <p>We do <strong>not</strong> sell your personal information to third parties.</p>
+
+    <h2>3. How We Share Your Information</h2>
+    <p>We share your information only in the following limited circumstances:</p>
+    <ul>
+      <li><strong>Your coach:</strong> Your profile data, workout history, progress metrics, uploaded videos, and messages are visible to the coach assigned to your account so they can provide coaching.</li>
+      <li><strong>Service providers:</strong> We use trusted third-party vendors (e.g., cloud hosting, payment processors, video storage) who process data on our behalf under confidentiality obligations.</li>
+      <li><strong>Legal compliance:</strong> We may disclose information if required by law, court order, or to protect the rights and safety of our users or the public.</li>
+      <li><strong>Business transfers:</strong> If we merge with or are acquired by another company, your information may be transferred as part of that transaction. We will notify you before your data becomes subject to a different privacy policy.</li>
+    </ul>
+
+    <h2>4. Children's Privacy</h2>
+    <p>
+      The App is intended for users of all ages, including minors who train with a coach. If a user
+      is under 13 (or under the applicable age of digital consent in their country), a parent or
+      legal guardian must create the account and consent to this Privacy Policy on their behalf.
+      We do not knowingly collect personal data from children under 13 without verifiable parental
+      consent. If you believe we have inadvertently collected such data, please contact us immediately
+      so we can delete it.
+    </p>
+
+    <h2>5. Data Retention</h2>
+    <p>
+      We retain your personal information for as long as your account is active or as needed to
+      provide our services. If you request account deletion, we will delete or anonymize your data
+      within 30 days, except where retention is required by law or legitimate business necessity
+      (e.g., billing records).
+    </p>
+
+    <h2>6. Data Security</h2>
+    <p>
+      We implement industry-standard security measures including encrypted data transmission (HTTPS/TLS),
+      hashed password storage, and access controls limiting who can view your data. No method of
+      transmission over the internet is 100% secure; we cannot guarantee absolute security, but we
+      take reasonable precautions to protect your information.
+    </p>
+
+    <h2>7. Your Rights and Choices</h2>
+    <p>Depending on where you live, you may have the right to:</p>
+    <ul>
+      <li><strong>Access</strong> the personal data we hold about you.</li>
+      <li><strong>Correct</strong> inaccurate or incomplete data.</li>
+      <li><strong>Delete</strong> your account and associated personal data.</li>
+      <li><strong>Export</strong> a copy of your data in a portable format.</li>
+      <li><strong>Opt out</strong> of non-essential communications.</li>
+    </ul>
+    <p>
+      To exercise any of these rights, contact us at the email below. We will respond within 30 days.
+      California residents may have additional rights under the CCPA; EU/UK residents have rights
+      under the GDPR — both are covered by the rights listed above.
+    </p>
+
+    <h2>8. Account Deletion</h2>
+    <p>
+      You can request deletion of your account and all associated personal data by emailing us at
+      <a href="mailto:privacy@summithoops.com">privacy@summithoops.com</a> with the subject
+      line "Delete My Account." We will process your request within 30 days.
+    </p>
+
+    <h2>9. Third-Party Services</h2>
+    <p>
+      The App uses third-party services (including cloud infrastructure and payment processors)
+      that have their own privacy policies. We encourage you to review those policies. We are not
+      responsible for the privacy practices of third-party services.
+    </p>
+
+    <h2>10. Changes to This Policy</h2>
+    <p>
+      We may update this Privacy Policy from time to time. When we do, we will update the "Last
+      updated" date above and, for material changes, notify you via email or an in-app notice at
+      least 7 days before the change takes effect. Your continued use of the App after changes
+      take effect constitutes acceptance of the revised policy.
+    </p>
+
+    <div class="contact-card">
+      <h2>Contact Us</h2>
+      <p>
+        If you have any questions, concerns, or requests regarding this Privacy Policy or your
+        personal data, please contact us:
+      </p>
+      <p style="margin-top:12px;">
+        <strong>Summit Hoops</strong><br />
+        Email: <a href="mailto:privacy@summithoops.com">privacy@summithoops.com</a>
+      </p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <a href="/" class="footer-logo">SUMMIT<span>.</span>HOOPS</a>
+      <div class="footer-links">
+        <a href="/privacy-policy.html">Privacy Policy</a>
+      </div>
+      <p class="footer-copy">© 2026 Summit Hoops. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -11,7 +11,7 @@
 
 import { useState, useEffect } from 'react'
 import { LogOut, Flame, Target, Calendar, CheckCircle, Clock, Star, Lock } from 'lucide-react'
-import { logout, getMe, getParentChild, getParentChildAssignments, getParentChildSkillAssessment, getParentChildFormChecks, changePassword } from '../services/api'
+import { logout, getMe, getParentChild, getParentChildAssignments, getParentChildSkillAssessment, getParentChildFormChecks, getParentChildMessages, changePassword } from '../services/api'
 import { useAuth } from '../App'
 
 
@@ -165,6 +165,7 @@ export default function ParentPortalPage() {
   const [assignments, setAssignments] = useState([])
   const [skillAssessment, setSkillAssessment] = useState(null)
   const [formChecks, setFormChecks] = useState([])
+  const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showChangePwd, setShowChangePwd] = useState(false)
@@ -187,15 +188,17 @@ export default function ParentPortalPage() {
 
         if (!childData) return  // Stop here if no child
 
-        const [assignmentsData, skillData, checksData] = await Promise.all([
+        const [assignmentsData, skillData, checksData, messagesData] = await Promise.all([
           getParentChildAssignments().catch(() => []),
           getParentChildSkillAssessment().catch(() => null),
           getParentChildFormChecks().catch(() => []),
+          getParentChildMessages().catch(() => []),
         ])
         setChild(childData)
         setAssignments(assignmentsData)
         setSkillAssessment(skillData)
         setFormChecks(checksData)
+        setMessages(messagesData)
       } catch (err) {
         setError(err.message || 'Failed to load')
       } finally {
@@ -562,6 +565,71 @@ export default function ParentPortalPage() {
 
           </div>
         </div>
+
+        {/* ---- MESSAGE THREAD ---- */}
+        <div style={{
+          background: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '24px',
+          marginTop: 24,
+          boxShadow: 'var(--shadow-md)',
+          border: '1px solid var(--color-border)',
+        }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 4px' }}>
+            Coach &amp; Player Messages
+          </h2>
+          <p style={{ fontSize: 12, color: 'var(--color-text-light)', marginBottom: 16 }}>
+            Read-only view of the conversation between {child.first_name} and their coach.
+          </p>
+
+          {messages.length === 0 ? (
+            <p style={{ color: 'var(--color-text-light)', fontSize: 14, fontStyle: 'italic' }}>
+              No messages yet.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflowY: 'auto', paddingRight: 4 }}>
+              {messages.map(msg => (
+                <div key={msg.id} style={{
+                  display: 'flex',
+                  flexDirection: msg.is_from_coach ? 'row' : 'row-reverse',
+                  gap: 10,
+                  alignItems: 'flex-end',
+                }}>
+                  {/* Avatar dot */}
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                    background: msg.is_from_coach ? 'var(--color-accent)' : 'var(--color-info)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, color: '#fff',
+                  }}>
+                    {msg.sender_name.charAt(0)}
+                  </div>
+
+                  <div style={{ maxWidth: '70%' }}>
+                    <div style={{
+                      padding: '10px 14px',
+                      borderRadius: msg.is_from_coach ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                      background: msg.is_from_coach ? 'var(--color-accent-light)' : 'var(--color-bg)',
+                      border: `1px solid ${msg.is_from_coach ? 'rgba(255,92,22,0.2)' : 'var(--color-border)'}`,
+                      fontSize: 14,
+                      color: 'var(--color-text)',
+                      lineHeight: 1.5,
+                    }}>
+                      {msg.content}
+                    </div>
+                    <div style={{
+                      fontSize: 10, color: 'var(--color-text-light)', marginTop: 3,
+                      textAlign: msg.is_from_coach ? 'left' : 'right',
+                    }}>
+                      {msg.sender_name} · {new Date(msg.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* ---- CHANGE PASSWORD MODAL ---- */}

@@ -18,6 +18,7 @@ from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.workout import WorkoutAssignment, WorkoutDrill, AssignmentStatus
 from app.models.progress import WorkoutCompletion, DrillCompletion, SkillAssessment, UserBadge, Badge
+from app.models.message import Message
 from app.schemas.user import UserProfile, BadgeResponse
 from app.services.auth import require_parent
 from app.services.storage import get_presigned_url
@@ -189,3 +190,46 @@ async def get_child_form_checks(
         })
 
     return items
+
+
+@router.get("/child/messages")
+async def get_child_messages(
+    parent: User = Depends(require_parent),
+    db: AsyncSession = Depends(get_db),
+):
+    """Parent: read-only view of the coach-student message thread."""
+    from sqlalchemy import or_, and_
+    child = await _get_child(parent, db)
+
+    # Find the coach
+    coach_result = await db.execute(
+        select(User).where(User.role == UserRole.COACH, User.is_active == True).limit(1)
+    )
+    coach = coach_result.scalar_one_or_none()
+    if not coach:
+        return []
+
+    result = await db.execute(
+        select(Message)
+        .options(selectinload(Message.sender))
+        .where(
+            or_(
+                and_(Message.sender_id == child.id, Message.recipient_id == coach.id),
+                and_(Message.sender_id == coach.id, Message.recipient_id == child.id),
+            )
+        )
+        .order_by(Message.created_at)
+    )
+    messages = result.scalars().all()
+
+    return [
+        {
+            "id": m.id,
+            "content": m.content,
+            "created_at": m.created_at,
+            "sender_name": f"{m.sender.first_name} {m.sender.last_name}" if m.sender else "Unknown",
+            "sender_role": m.sender.role.value if m.sender else "unknown",
+            "is_from_coach": m.sender_id == coach.id,
+        }
+        for m in messages
+    ]

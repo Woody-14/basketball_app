@@ -214,6 +214,24 @@ async def register_push_token(
     await db.flush()
 
 
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_account(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Student requests account deletion.
+    Deactivates the account immediately and flags it for data removal.
+    Apple App Store requires this to be available in-app.
+    """
+    result = await db.execute(select(User).where(User.id == current_user.id))
+    user = result.scalar_one()
+    user.is_active = False
+    # Clear PII that can be purged immediately
+    user.push_token = None
+    await db.flush()
+
+
 @router.get("/me", response_model=UserProfile)
 async def get_me(
     current_user: User = Depends(get_current_user),

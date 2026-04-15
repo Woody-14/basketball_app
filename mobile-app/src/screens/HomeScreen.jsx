@@ -17,9 +17,12 @@ import { useAuth } from '../hooks/useAuth';
 import { getMyAssignments } from '../services/api';
 
 
-// Helper: get today's date as YYYY-MM-DD
+// Helper: get today's date as YYYY-MM-DD in LOCAL time (not UTC)
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
 // Helper: get dates for current week
@@ -94,8 +97,8 @@ export default function HomeScreen({ navigation }) {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Reload data every time the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -103,8 +106,8 @@ export default function HomeScreen({ navigation }) {
   );
 
   async function loadData() {
+    setError(null);
     try {
-      // Get this week's assignments
       const weekDates = getWeekDates();
       const startDate = weekDates[0].toISOString().split('T')[0];
       const endDate = weekDates[6].toISOString().split('T')[0];
@@ -112,7 +115,7 @@ export default function HomeScreen({ navigation }) {
       setAssignments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load assignments:', err);
-      setAssignments([]);
+      setError('Could not load your workouts. Check your connection and pull down to retry.');
     } finally {
       setLoading(false);
     }
@@ -138,6 +141,8 @@ export default function HomeScreen({ navigation }) {
     return 'Good evening';
   }
 
+
+
   // Week calendar dots
   const weekDates = getWeekDates();
   const assignmentDates = new Set(assignments.map(a => a.assigned_date));
@@ -149,18 +154,27 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* Top Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.name}>
-            {user?.first_name || 'Player'} 🏀
-          </Text>
+          <Text style={styles.name}>{user?.first_name || 'Player'}</Text>
+          <View style={styles.headerAccentBar} />
         </View>
-        <TouchableOpacity
-          style={styles.messageBtn}
-          onPress={() => navigation.navigate('Messages')}
-        >
-          <Ionicons name="chatbubble-ellipses-outline" size={24} color={COLORS.text} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {/* Streak badge */}
+          <View style={styles.streakBadge}>
+            <Ionicons name="flame" size={20} color={COLORS.accent} />
+            <View style={styles.streakTextGroup}>
+              <Text style={styles.streakNum}>{user?.current_streak || 0}</Text>
+              <Text style={styles.streakLabel}>streak</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={() => navigation.navigate('Messages')}
+          >
+            <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -170,6 +184,14 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.accent} />
         }
       >
+        {/* Error banner */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="cloud-offline-outline" size={18} color={COLORS.danger} />
+            <Text style={styles.errorBannerText}>{error}</Text>
+          </View>
+        )}
+
         {/* Training Phase Banner */}
         {user?.training_phase && <PhaseBanner phase={user.training_phase} />}
 
@@ -330,53 +352,6 @@ export default function HomeScreen({ navigation }) {
           </>
         )}
 
-        {/* Quick Stats */}
-        <Text style={styles.sectionTitle}>Quick Stats</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Ionicons name="flame-outline" size={24} color={COLORS.accent} />
-            <Text style={styles.statValue}>{user?.current_streak || 0}</Text>
-            <Text style={styles.statLabel}>Day Streak</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="trophy-outline" size={24} color={COLORS.warning} />
-            <Text style={styles.statValue}>{user?.badges?.length || 0}</Text>
-            <Text style={styles.statLabel}>Badges</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="checkmark-done-outline" size={24} color={COLORS.success} />
-            <Text style={styles.statValue}>{completedThisWeek}</Text>
-            <Text style={styles.statLabel}>This Week</Text>
-          </View>
-        </View>
-
-        {/* XP Progress */}
-        {(() => {
-          const xp = user?.xp || 0;
-          const { name, level, nextThreshold, progress } = getLevelInfo(xp);
-          return (
-            <View style={styles.xpCard}>
-              <View style={styles.xpHeader}>
-                <View style={styles.xpLevelBadge}>
-                  <Text style={styles.xpLevelText}>Lv {level}</Text>
-                </View>
-                <Text style={styles.xpLevelName}>{name}</Text>
-                <Text style={styles.xpTotal}>{xp.toLocaleString()} XP</Text>
-              </View>
-              <View style={styles.xpBarBg}>
-                <View style={[styles.xpBarFill, { width: `${Math.min(progress * 100, 100)}%` }]} />
-              </View>
-              {nextThreshold ? (
-                <Text style={styles.xpNextLabel}>
-                  {(nextThreshold - xp).toLocaleString()} XP to next level
-                </Text>
-              ) : (
-                <Text style={styles.xpNextLabel}>Maximum level reached!</Text>
-              )}
-            </View>
-          );
-        })()}
-
         {/* Bottom padding */}
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -396,29 +371,133 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingTop: 60,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
   },
   greeting: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.accent,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 3,
   },
   name: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: COLORS.text,
     letterSpacing: -0.5,
+  },
+  headerAccentBar: {
+    width: 32,
+    height: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: 2,
+    marginTop: 8,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.accentLight,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,92,22,0.2)',
+  },
+  streakTextGroup: {
+    alignItems: 'center',
+  },
+  streakNum: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.text,
+    lineHeight: 22,
+  },
+  streakLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   messageBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.2)',
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.danger,
+    lineHeight: 18,
+  },
+
+  // Form Check card
+  formCheckCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginTop: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,92,22,0.15)',
+    ...SHADOWS.sm,
+  },
+  formCheckIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.accentLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  formCheckInfo: { flex: 1 },
+  formCheckTitle: {
+    fontSize: FONTS.sizes.body,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  formCheckSub: {
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
   scroll: {
     flex: 1,

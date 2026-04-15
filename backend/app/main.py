@@ -1,5 +1,5 @@
 """
-Basketball Training App — Backend API
+Summit Hoops — Backend API
 
 Run with:
     uvicorn app.main:app --reload
@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI):
         await seed_default_badges(db)
         await db.commit()
 
-    print(f"🏀 {settings.APP_NAME} is running!")
+    print(f"{settings.APP_NAME} is running!")
 
     yield  # App runs here
 
@@ -85,7 +85,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Personalized basketball training platform — API",
+    description="Summit Hoops — API",
     version="0.1.0",
     lifespan=lifespan,
 )

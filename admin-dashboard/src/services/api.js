@@ -347,3 +347,7 @@ export async function getParentChildSkillAssessment() {
 export async function getParentChildFormChecks() {
   return request('/parent/child/form-checks');
 }
+
+export async function getParentChildMessages() {
+  return request('/parent/child/messages');
+}

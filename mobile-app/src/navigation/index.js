@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,24 +57,14 @@ function MainTabs() {
           paddingTop: 4,
           height: 88,
         },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, color }) => {
           let iconName;
           switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Feed':
-              iconName = focused ? 'newspaper' : 'newspaper-outline';
-              break;
-            case 'Drills':
-              iconName = focused ? 'barbell' : 'barbell-outline';
-              break;
-            case 'Progress':
-              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-              break;
-            case 'Profile':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
+            case 'Home':     iconName = focused ? 'home'        : 'home-outline';        break;
+            case 'Feed':     iconName = focused ? 'newspaper'   : 'newspaper-outline';   break;
+            case 'Drills':   iconName = focused ? 'barbell'     : 'barbell-outline';     break;
+            case 'Progress': iconName = focused ? 'stats-chart' : 'stats-chart-outline'; break;
+            case 'Profile':  iconName = focused ? 'person'      : 'person-outline';      break;
           }
           return <Ionicons name={iconName} size={24} color={color} />;
         },

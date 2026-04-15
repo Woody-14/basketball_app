@@ -17,13 +17,58 @@ import { useAuth } from '../hooks/useAuth';
 import RadarChart from '../components/RadarChart';
 
 
-// Get last N days as date strings
+// Local date string helper — avoids UTC offset issues with toISOString()
+function localDateStr(date) {
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * Streak = consecutive completed workouts counting backwards from the most recent.
+ * Rules:
+ *   - If today's workout exists but isn't completed yet, skip it (give them until EOD).
+ *   - Any past assignment (assigned_date < today) that isn't completed breaks the streak.
+ *   - "scheduled" status on a past date counts as missed.
+ */
+function calcStreak(assignments) {
+  const today = localDateStr(new Date());
+
+  // Only look at past assignments (assigned date is today or earlier)
+  const past = [...assignments]
+    .filter(a => a.assigned_date <= today)
+    .sort((a, b) => b.assigned_date.localeCompare(a.assigned_date));
+
+  if (past.length === 0) return 0;
+
+  // If today's workout isn't done yet, skip it — don't break the streak mid-day
+  const start = (past[0].assigned_date === today && past[0].status !== 'completed') ? 1 : 0;
+
+  let streak = 0;
+  for (let i = start; i < past.length; i++) {
+    const a = past[i];
+    const isPast = a.assigned_date < today;
+    const isCompleted = a.status === 'completed';
+    // A past assignment that isn't completed ends the streak
+    if (isCompleted) {
+      streak++;
+    } else if (isPast) {
+      break;
+    }
+    // today not completed is already skipped above
+  }
+  return streak;
+}
+
+// Get last N days as YYYY-MM-DD strings in LOCAL time (not UTC).
 function getLastNDays(n) {
   const dates = [];
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().split('T')[0]);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    dates.push(`${d.getFullYear()}-${mm}-${dd}`);
   }
   return dates;
 }
@@ -34,6 +79,7 @@ export default function ProgressScreen() {
   const [assignments, setAssignments] = useState([]);
   const [skillAssessment, setSkillAssessment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,11 +88,12 @@ export default function ProgressScreen() {
   );
 
   async function loadHistory() {
+    setError(null);
     try {
-      const endDate = new Date().toISOString().split('T')[0];
+      const endDate = localDateStr(new Date());
       const start = new Date();
-      start.setDate(start.getDate() - 60);
-      const startDate = start.toISOString().split('T')[0];
+      start.setDate(start.getDate() - 90);
+      const startDate = localDateStr(start);
 
       const [assignmentsData, skillData] = await Promise.all([
         getMyAssignments(startDate, endDate),
@@ -57,6 +104,7 @@ export default function ProgressScreen() {
       setSkillAssessment(skillData || null);
     } catch (err) {
       console.error('Failed to load progress:', err);
+      setError('Could not load your progress. Pull down to retry.');
       setAssignments([]);
     } finally {
       setLoading(false);
@@ -73,52 +121,42 @@ export default function ProgressScreen() {
 
   // Build heatmap data for last 28 days
   const last28 = getLastNDays(28);
-  const completedDates = new Set(
-    completedAssignments.map(a => a.assigned_date)
-  );
-  const assignedDates = new Set(
-    assignments.map(a => a.assigned_date)
-  );
+  const completedDates = new Set(completedAssignments.map(a => a.assigned_date));
+  const assignedDates = new Set(assignments.map(a => a.assigned_date));
 
-  // Calculate current streak.
-  // If today's workout is assigned but not yet done, start counting from yesterday
-  // so a pending workout doesn't wipe out an existing streak.
-  let streak = 0;
-  const today = new Date().toISOString().split('T')[0];
-  const todayPending = assignedDates.has(today) && !completedDates.has(today);
-  const startOffset = todayPending ? 1 : 0;
-  for (let i = startOffset; i <= 60; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    if (completedDates.has(dateStr)) {
-      streak++;
-    } else if (assignedDates.has(dateStr)) {
-      break; // Had a workout but didn't complete it — streak ends
-    }
-    // Days with no assignment are rest days — don't break the streak
-  }
+  const streak = calcStreak(assignments);
+  const today = localDateStr(new Date());
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <Text style={styles.headerEyebrow}>YOUR TRAINING</Text>
         <Text style={styles.headerTitle}>Progress</Text>
+        <View style={styles.headerAccentBar} />
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Error banner */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="cloud-offline-outline" size={18} color={COLORS.danger} />
+            <Text style={styles.errorBannerText}>{error}</Text>
+          </View>
+        )}
+
         {/* Streak Display */}
         <View style={styles.streakCard}>
           <View style={styles.streakCircle}>
             <Ionicons name="flame" size={36} color={COLORS.accent} />
           </View>
-          <Text style={styles.streakValue}>{user?.current_streak ?? streak}</Text>
+          <Text style={styles.streakValue}>{streak}</Text>
           <Text style={styles.streakLabel}>Day Streak</Text>
           <Text style={styles.streakMotivation}>
-            {(user?.current_streak ?? streak) === 0
+            {(streak) === 0
               ? 'Complete today\'s workout to start your streak!'
-              : (user?.current_streak ?? streak) < 7
+              : (streak) < 7
                 ? 'Keep it going! Build that habit.'
-                : (user?.current_streak ?? streak) < 30
+                : (streak) < 30
                   ? 'You\'re on fire! 🔥'
                   : 'Incredible dedication! 🏆'}
           </Text>
@@ -261,17 +299,53 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: 60,
-    paddingBottom: SPACING.md,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accent,
+    letterSpacing: 2,
+    marginBottom: 3,
+    textTransform: 'uppercase',
   },
   headerTitle: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: COLORS.text,
+    letterSpacing: -0.5,
+  },
+  headerAccentBar: {
+    width: 32,
+    height: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: 2,
+    marginTop: 8,
   },
   scroll: { flex: 1, paddingHorizontal: SPACING.lg },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.2)',
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: FONTS.sizes.sm,
+    color: COLORS.danger,
+    lineHeight: 18,
+  },
 
   // Streak
   streakCard: {
