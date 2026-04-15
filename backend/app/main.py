@@ -90,11 +90,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow the admin dashboard and mobile app to call the API
-# In production, replace "*" with your actual frontend domains
+# CORS — controlled by ALLOWED_ORIGINS env var (defaults to "*" in dev)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: Lock down in production
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

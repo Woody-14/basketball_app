@@ -4,12 +4,16 @@ All settings are loaded from environment variables (or a .env file).
 """
 
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
 
 
 class Settings(BaseSettings):
-    
-        
+
+    # -- CORS --
+    # Comma-separated list of allowed origins in production.
+    # Defaults to "*" for local dev. Override via ALLOWED_ORIGINS env var.
+    ALLOWED_ORIGINS: List[str] = ["*"]
+
     R2_ACCOUNT_ID: str = ""
     R2_ACCESS_KEY_ID: str = ""
     R2_SECRET_ACCESS_KEY: str = ""
