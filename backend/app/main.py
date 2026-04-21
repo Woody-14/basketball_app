@@ -180,35 +180,38 @@ async def health_check():
 # One-time setup endpoint — creates demo accounts. Remove after first use.
 @app.post("/setup-demo", tags=["System"])
 async def setup_demo(db: AsyncSession = Depends(get_db)):
+    import traceback
     from app.models.user import User, UserRole, SubscriptionTier
     from app.services.auth import hash_password
     from sqlalchemy import select
 
     created = []
+    try:
+        result = await db.execute(select(User).where(User.email == "coach@example.com"))
+        if not result.scalar_one_or_none():
+            db.add(User(
+                email="coach@example.com",
+                hashed_password=hash_password("coach123"),
+                first_name="Coach",
+                last_name="Admin",
+                role=UserRole.COACH,
+            ))
+            created.append("coach@example.com")
 
-    result = await db.execute(select(User).where(User.email == "coach@example.com"))
-    if not result.scalar_one_or_none():
-        db.add(User(
-            email="coach@example.com",
-            hashed_password=hash_password("coach123"),
-            first_name="Coach",
-            last_name="Admin",
-            role=UserRole.COACH,
-        ))
-        created.append("coach@example.com")
+        result = await db.execute(select(User).where(User.email == "demo.student@example.com"))
+        if not result.scalar_one_or_none():
+            db.add(User(
+                email="demo.student@example.com",
+                hashed_password=hash_password("student123"),
+                first_name="Demo",
+                last_name="Student",
+                role=UserRole.STUDENT,
+                age=14,
+                subscription_tier=SubscriptionTier.TRAINING,
+            ))
+            created.append("demo.student@example.com")
 
-    result = await db.execute(select(User).where(User.email == "demo.student@example.com"))
-    if not result.scalar_one_or_none():
-        db.add(User(
-            email="demo.student@example.com",
-            hashed_password=hash_password("student123"),
-            first_name="Demo",
-            last_name="Student",
-            role=UserRole.STUDENT,
-            age=14,
-            subscription_tier=SubscriptionTier.TRAINING,
-        ))
-        created.append("demo.student@example.com")
-
-    await db.commit()
-    return {"created": created or "accounts already exist"}
+        await db.commit()
+        return {"created": created or "accounts already exist"}
+    except Exception as e:
+        return {"error": str(e), "trace": traceback.format_exc()}
