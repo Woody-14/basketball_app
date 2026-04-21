@@ -10,6 +10,7 @@ alembic==1.13.2          # Database migrations
 # Authentication
 python-jose[cryptography]==3.3.0   # JWT tokens
 passlib[bcrypt]==1.7.4             # Password hashing
+bcrypt==4.0.1                      # Pin bcrypt — 4.1+ breaks passlib 1.7.4
 python-multipart==0.0.9            # Form data parsing (login)
 
 # Validation & Settings
