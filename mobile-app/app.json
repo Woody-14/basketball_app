@@ -20,6 +20,9 @@
       "buildNumber": "1",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
