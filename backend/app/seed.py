@@ -22,17 +22,13 @@ import app.models  # noqa
 
 
 async def seed():
-    # Create tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     async with AsyncSessionLocal() as db:
         # ---- COACH ACCOUNT ----
         result = await db.execute(select(User).where(User.email == "coach@example.com"))
         if not result.scalar_one_or_none():
             coach = User(
                 email="coach@example.com",
-                hashed_password=hash_password("changeme123"),
+                hashed_password=hash_password("coach123"),
                 first_name="Coach",
                 last_name="Admin",
                 role=UserRole.COACH,
