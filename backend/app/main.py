@@ -139,9 +139,6 @@ async def lifespan(app: FastAPI):
         await seed_default_badges(db)
         await db.commit()
 
-    # Seed demo accounts and sample data (idempotent)
-    from app.seed import seed as run_seed
-    await run_seed()
 
     print(f"{settings.APP_NAME} is running!")
 
