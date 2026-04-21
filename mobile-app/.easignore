@@ -1,11 +1,13 @@
-# Exclude backend (not needed for mobile build)
+# Exclude backend and other non-mobile directories
 ../backend/
 ../admin-dashboard/
 ../website/
 ../logo.jpeg
+../venv/
+venv/
 
-# Exclude large/unnecessary files
+# Python
 **/__pycache__/
 **/venv/
-**/node_modules/
 **/*.pyc
+*.pyc
