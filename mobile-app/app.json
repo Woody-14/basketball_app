@@ -28,11 +28,18 @@
         "backgroundColor": "#1A1A2E"
       },
       "package": "com.summithoops.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "extra": {
       "privacyPolicyUrl": "https://woody-14.github.io/basketball_app/website/privacy-policy.html",
-      "supportEmail": "summit.athletic.training@gmail.com"
+      "supportEmail": "summit.athletic.training@gmail.com",
+      "eas": {
+        "projectId": "ef0b607b-18ab-4116-8bd5-68bb34c7ff0c"
+      }
     },
     "plugins": [
       [
