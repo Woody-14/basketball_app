@@ -1,0 +1,11 @@
+# Exclude backend (not needed for mobile build)
+../backend/
+../admin-dashboard/
+../website/
+../logo.jpeg
+
+# Exclude large/unnecessary files
+**/__pycache__/
+**/venv/
+**/node_modules/
+**/*.pyc
