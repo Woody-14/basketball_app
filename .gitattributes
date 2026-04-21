@@ -1,0 +1,7 @@
+# Exclude these from git archive (used by EAS build)
+.claude/ export-ignore
+venv/ export-ignore
+backend/venv/ export-ignore
+*.jpeg export-ignore
+*.jpg export-ignore
+logo.* export-ignore
