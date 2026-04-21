@@ -1,5 +1,8 @@
 name: EAS Build
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -41,7 +44,7 @@ jobs:
         run: npm ci
 
       - name: Setup EAS
-        uses: expo/expo-github-action@v9
+        uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
