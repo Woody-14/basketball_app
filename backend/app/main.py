@@ -206,7 +206,7 @@ async def setup_demo(db: AsyncSession = Depends(get_db)):
             last_name="Student",
             role=UserRole.STUDENT,
             age=14,
-            subscription_tier=SubscriptionTier.BASE,
+            subscription_tier=SubscriptionTier.TRAINING,
         ))
         created.append("demo.student@example.com")
 
