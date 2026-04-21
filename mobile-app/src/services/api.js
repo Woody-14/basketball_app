@@ -28,7 +28,7 @@ function getApiBase() {
   // ⚠️  BEFORE SUBMITTING TO APP STORES:
   // Replace this with your real backend URL, e.g. 'https://api.summithoops.com/api'
   // The app will not work in production until this is set.
-  return 'https://basketball-app-production.up.railway.app/api';
+  return 'https://basketballapp-production.up.railway.app/api';
 }
 
 const API_BASE = getApiBase();
