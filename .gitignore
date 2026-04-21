@@ -89,3 +89,12 @@ desktop.ini
 *.bak
 
 .expo/
+
+# ======================================
+# TOOLS (exclude from EAS build clone)
+# ======================================
+
+.claude/
+*.jpeg
+*.jpg
+logo.*
