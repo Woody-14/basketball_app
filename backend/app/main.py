@@ -9,12 +9,15 @@ API docs available at:
     http://localhost:8000/redoc (ReDoc)
 """
 
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from app.api.uploads import router as uploads_router
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 from app.config import settings
 from app.database import engine, Base, AsyncSessionLocal
@@ -22,6 +25,62 @@ from app.api import all_routers
 
 # Import all models so SQLAlchemy knows about them
 import app.models  # noqa: F401
+
+logger = logging.getLogger(__name__)
+
+# Exceptions that indicate the database isn't ready yet (not a config error).
+_DB_TRANSIENT_ERRORS = (
+    ConnectionRefusedError,
+    OperationalError,
+    OSError,
+)
+
+
+async def _wait_for_db(
+    max_wait: float = 30.0,
+    base_delay: float = 1.0,
+    backoff_factor: float = 2.0,
+    max_delay: float = 8.0,
+) -> None:
+    """
+    Probe the database with a lightweight query, retrying with exponential
+    backoff until the connection succeeds or *max_wait* seconds have elapsed.
+
+    Catches transient connection errors (ConnectionRefusedError, asyncpg
+    CannotConnectNowError surfaced as SQLAlchemy OperationalError, etc.) so
+    the app can survive a race between the app container and the Postgres
+    container starting in parallel.
+    """
+    deadline = asyncio.get_event_loop().time() + max_wait
+    delay = base_delay
+    attempt = 0
+
+    while True:
+        attempt += 1
+        try:
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            logger.info("Database is ready (attempt %d).", attempt)
+            return
+        except _DB_TRANSIENT_ERRORS as exc:
+            remaining = deadline - asyncio.get_event_loop().time()
+            if remaining <= 0:
+                logger.error(
+                    "Database still unavailable after %.0f s — giving up.", max_wait
+                )
+                raise RuntimeError(
+                    f"Could not connect to the database after {max_wait}s."
+                ) from exc
+
+            wait = min(delay, remaining)
+            logger.warning(
+                "Database not ready (attempt %d): %s. Retrying in %.1f s…",
+                attempt,
+                exc,
+                wait,
+            )
+            await asyncio.sleep(wait)
+            delay = min(delay * backoff_factor, max_delay)
 
 
 @asynccontextmanager
@@ -31,6 +90,9 @@ async def lifespan(app: FastAPI):
     In development, this creates all database tables automatically.
     In production, you'd use Alembic migrations instead.
     """
+    # Wait until Postgres is accepting connections before running any DDL.
+    await _wait_for_db()
+
     # Startup: create tables if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
